@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	"github.com/devduck123/servizio-be/internal/businessdao"
@@ -20,7 +22,16 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	client, err := firestore.NewClient(ctx, "")
+	local := flag.Bool("local", false, "local connects to a local running firestore database")
+	flag.Parse()
+	if local != nil && *local {
+		log.Println("connecting to local running firestore database on localhost:8080")
+		if err := os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:8080"); err != nil {
+			log.Fatal("failed to set FIRESTORE_EMULATOR_HOST environment variable", err)
+		}
+	}
+
+	client, err := firestore.NewClient(ctx, "servizio-be")
 	if err != nil {
 		return err
 	}
