@@ -23,10 +23,28 @@ func TestGetBusinessByID(t *testing.T) {
 	client, err := firestore.NewClient(ctx, "test")
 	assert.NoError(t, err)
 	dao := NewDao(client)
-	business, err := dao.GetBusiness(ctx, "foo")
+	input := CreateInput{
+		Name: "foobarbaz",
+	}
+	business, err := dao.Create(ctx, input)
 	assert.NoError(t, err)
-	assert.NotNil(t, business)
-	assert.Equal(t, "foo", business.ID)
+
+	gotBusiness, err := dao.GetBusiness(ctx, business.ID)
+	assert.NoError(t, err)
+	assert.NotNil(t, gotBusiness)
+	assert.Equal(t, business.ID, gotBusiness.ID)
+	assert.Equal(t, input.Name, gotBusiness.Name)
+}
+
+func TestGetBusiness_NotExists(t *testing.T) {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "test")
+	assert.NoError(t, err)
+	dao := NewDao(client)
+
+	gotBusiness, err := dao.GetBusiness(ctx, "notexists")
+	assert.Equal(t, "business not found", err.Error())
+	assert.Nil(t, gotBusiness)
 }
 
 func TestCreateBusiness(t *testing.T) {
