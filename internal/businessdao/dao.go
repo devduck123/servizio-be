@@ -10,9 +10,10 @@ import (
 )
 
 type Business struct {
-	ID     string   `json:"id" firestore:"-"`
-	Name   string   `json:"name" firestore:"name"`
-	Images []string `json:"images,omitempty" firestore:"images,omitempty"`
+	ID       string   `json:"id" firestore:"-"`
+	Name     string   `json:"name" firestore:"name"`
+	Images   []string `json:"images,omitempty" firestore:"images,omitempty"`
+	Category Category `json:"category" firestore:"category"`
 }
 
 type Dao struct {
@@ -44,12 +45,29 @@ func (dao *Dao) GetBusiness(ctx context.Context, id string) (*Business, error) {
 }
 
 type GetAllBusinessesInput struct {
-	// TODO:
+	// category is optional
+	Category Category
 }
 
 func (dao *Dao) GetAllBusinesses(ctx context.Context, input GetAllBusinessesInput) ([]Business, error) {
-	// TODO:
-	return nil, nil
+	snapshots, err := dao.fsClient.Collection("businesses").
+		Where("Category", "==", input.Category).
+		Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	businesses := make([]Business, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		var business Business
+		if err := snapshot.DataTo(&business); err != nil {
+			return nil, err
+		}
+		business.ID = snapshot.Ref.ID
+		businesses = append(businesses, business)
+	}
+
+	return businesses, nil
 }
 
 type CreateInput struct {
