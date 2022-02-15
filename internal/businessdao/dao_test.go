@@ -2,11 +2,14 @@ package businessdao
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/firestore"
+	"github.com/google/uuid"
 	"github.com/tj/assert"
 )
 
@@ -22,7 +25,8 @@ func TestGetBusinessByID(t *testing.T) {
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "test")
 	assert.NoError(t, err)
-	dao := NewDao(client)
+	businessCollection := fmt.Sprintf("business-%v", time.Now().Unix())
+	dao := NewDao(client, businessCollection)
 	input := CreateInput{
 		Name: "foobarbaz",
 	}
@@ -40,7 +44,8 @@ func TestGetBusiness_NotExists(t *testing.T) {
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "test")
 	assert.NoError(t, err)
-	dao := NewDao(client)
+	businessCollection := fmt.Sprintf("business-%v", time.Now().Unix())
+	dao := NewDao(client, businessCollection)
 
 	gotBusiness, err := dao.GetBusiness(ctx, "notexists")
 	assert.Equal(t, "business not found", err.Error())
@@ -51,7 +56,8 @@ func TestCreateBusiness(t *testing.T) {
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "servizio-be")
 	assert.NoError(t, err)
-	dao := NewDao(client)
+	businessCollection := fmt.Sprintf("business-%v", time.Now().Unix())
+	dao := NewDao(client, businessCollection)
 	input := CreateInput{
 		Name: "foobarbaz",
 	}
@@ -60,4 +66,26 @@ func TestCreateBusiness(t *testing.T) {
 	assert.NotNil(t, business)
 	assert.NotEmpty(t, business.ID)
 	assert.Equal(t, input.Name, business.Name)
+}
+
+func TestGetAllBusinesses(t *testing.T) {
+	ctx := context.Background()
+	client, err := firestore.NewClient(ctx, "servizio-be")
+	assert.NoError(t, err)
+	businessCollection := fmt.Sprintf("business-%v", uuid.New())
+	dao := NewDao(client, businessCollection)
+	createInput := CreateInput{
+		Name:     "foo",
+		Category: CategoryAutomotive,
+	}
+
+	_, err = dao.Create(ctx, createInput)
+	assert.NoError(t, err)
+	getAllBusinessesInput := GetAllBusinessesInput{
+		Category: CategoryAutomotive,
+	}
+
+	allBusinesses, err := dao.GetAllBusinesses(ctx, getAllBusinessesInput)
+	assert.NoError(t, err)
+	assert.Len(t, allBusinesses, 1)
 }

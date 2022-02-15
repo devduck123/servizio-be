@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	cloud.google.com/go/firestore v1.6.1
+	github.com/google/uuid v1.1.2
 	github.com/tj/assert v0.0.3
 	google.golang.org/grpc v1.40.1
 )

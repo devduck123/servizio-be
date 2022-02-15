@@ -18,16 +18,18 @@ type Business struct {
 
 type Dao struct {
 	fsClient *firestore.Client
+	businessCollectionName string
 }
 
-func NewDao(client *firestore.Client) *Dao {
+func NewDao(client *firestore.Client, businessCollectionName string) *Dao {
 	return &Dao{
 		fsClient: client,
+		businessCollectionName: businessCollectionName,
 	}
 }
 
 func (dao *Dao) GetBusiness(ctx context.Context, id string) (*Business, error) {
-	docRef := dao.fsClient.Collection("businesses").Doc(id)
+	docRef := dao.fsClient.Collection(dao.businessCollectionName).Doc(id)
 	snapshot, err := docRef.Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
@@ -50,8 +52,8 @@ type GetAllBusinessesInput struct {
 }
 
 func (dao *Dao) GetAllBusinesses(ctx context.Context, input GetAllBusinessesInput) ([]Business, error) {
-	snapshots, err := dao.fsClient.Collection("businesses").
-		Where("Category", "==", input.Category).
+	snapshots, err := dao.fsClient.Collection(dao.businessCollectionName).
+		Where("category", "==", input.Category).
 		Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
@@ -71,15 +73,17 @@ func (dao *Dao) GetAllBusinesses(ctx context.Context, input GetAllBusinessesInpu
 }
 
 type CreateInput struct {
-	Name string
+	Name     string
+	Category Category
 }
 
 func (dao *Dao) Create(ctx context.Context, input CreateInput) (*Business, error) {
 	business := Business{
-		Name: input.Name,
+		Name:     input.Name,
+		Category: input.Category,
 	}
 
-	doc, _, err := dao.fsClient.Collection("businesses").Add(ctx, business)
+	doc, _, err := dao.fsClient.Collection(dao.businessCollectionName).Add(ctx, business)
 	if err != nil {
 		return nil, err
 	}

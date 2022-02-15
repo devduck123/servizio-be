@@ -3,8 +3,8 @@ package businessdao
 type Category string
 
 var (
-	CategoryPets       = "pets"
-	CategoryAutomotive = "automotive"
-	CategoryEvents     = "events"
-	CategoryBeauty     = "beauty"
+	CategoryPets       Category = "pets"
+	CategoryAutomotive Category = "automotive"
+	CategoryEvents     Category = "events"
+	CategoryBeauty     Category = "beauty"
 )
