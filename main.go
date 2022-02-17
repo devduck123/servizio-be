@@ -35,10 +35,10 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	
+
 	businessDao := businessdao.NewDao(client, "businesses")
 	s := server.NewServer(businessDao)
-	http.HandleFunc("/businesses/", s.GetBusiness)
+	http.HandleFunc("/businesses/", s.BusinessRouter)
 	fmt.Println("listening on port 3000")
 	if err := http.ListenAndServe(":3000", nil); err != nil {
 		return err

@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var ErrBusinessNotFound = errors.New("business not found")
+
 type Business struct {
 	ID       string   `json:"id" firestore:"-"`
 	Name     string   `json:"name" firestore:"name"`
@@ -33,7 +35,7 @@ func (dao *Dao) GetBusiness(ctx context.Context, id string) (*Business, error) {
 	snapshot, err := docRef.Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, errors.New("business not found")
+			return nil, ErrBusinessNotFound
 		}
 		return nil, err
 	}
