@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"testing"
-	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/google/uuid"
@@ -21,12 +20,45 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+func createTestDao(ctx context.Context, t *testing.T, keepCollection ...bool) *Dao {
+	t.Helper()
+
+	client, err := firestore.NewClient(ctx, "servizio-be")
+	assert.NoError(t, err)
+	businessCollection := fmt.Sprintf("business-%v", uuid.New())
+	dao := NewDao(client, businessCollection)
+
+	cleanUp := true
+	for _, kc := range keepCollection {
+		if kc {
+			cleanUp = false
+			break
+		}
+	}
+
+	if cleanUp {
+		t.Cleanup(func() {
+			deleteCollection(ctx, t, client, businessCollection)
+		})
+	}
+
+	return dao
+}
+
+func deleteCollection(ctx context.Context, t *testing.T, fsClient *firestore.Client, collection string) {
+	documentRefs, err := fsClient.Collection(collection).DocumentRefs(ctx).GetAll()
+	assert.NoError(t, err)
+
+	for _, document := range documentRefs {
+		_, err := document.Delete(ctx)
+		assert.NoError(t, err)
+	}
+}
+
 func TestGetBusinessByID(t *testing.T) {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, "test")
-	assert.NoError(t, err)
-	businessCollection := fmt.Sprintf("business-%v", time.Now().Unix())
-	dao := NewDao(client, businessCollection)
+	dao := createTestDao(ctx, t)
+
 	input := CreateInput{
 		Name: "foobarbaz",
 	}
@@ -42,10 +74,7 @@ func TestGetBusinessByID(t *testing.T) {
 
 func TestGetBusiness_NotExists(t *testing.T) {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, "test")
-	assert.NoError(t, err)
-	businessCollection := fmt.Sprintf("business-%v", time.Now().Unix())
-	dao := NewDao(client, businessCollection)
+	dao := createTestDao(ctx, t)
 
 	gotBusiness, err := dao.GetBusiness(ctx, "notexists")
 	assert.Equal(t, "business not found", err.Error())
@@ -54,10 +83,8 @@ func TestGetBusiness_NotExists(t *testing.T) {
 
 func TestCreateBusiness(t *testing.T) {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, "servizio-be")
-	assert.NoError(t, err)
-	businessCollection := fmt.Sprintf("business-%v", time.Now().Unix())
-	dao := NewDao(client, businessCollection)
+	dao := createTestDao(ctx, t)
+
 	input := CreateInput{
 		Name: "foobarbaz",
 	}
@@ -70,21 +97,18 @@ func TestCreateBusiness(t *testing.T) {
 
 func TestGetAllBusinesses(t *testing.T) {
 	ctx := context.Background()
-	client, err := firestore.NewClient(ctx, "servizio-be")
-	assert.NoError(t, err)
-	businessCollection := fmt.Sprintf("business-%v", uuid.New())
-	dao := NewDao(client, businessCollection)
+	dao := createTestDao(ctx, t)
+
 	createInput := CreateInput{
 		Name:     "foo",
 		Category: CategoryAutomotive,
 	}
-
-	_, err = dao.Create(ctx, createInput)
+	_, err := dao.Create(ctx, createInput)
 	assert.NoError(t, err)
+
 	getAllBusinessesInput := GetAllBusinessesInput{
 		Category: CategoryAutomotive,
 	}
-
 	allBusinesses, err := dao.GetAllBusinesses(ctx, getAllBusinessesInput)
 	assert.NoError(t, err)
 	assert.Len(t, allBusinesses, 1)

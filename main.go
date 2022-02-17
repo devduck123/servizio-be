@@ -35,7 +35,8 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	businessDao := businessdao.NewDao(client)
+	
+	businessDao := businessdao.NewDao(client, "businesses")
 	s := server.NewServer(businessDao)
 	http.HandleFunc("/businesses/", s.GetBusiness)
 	fmt.Println("listening on port 3000")
