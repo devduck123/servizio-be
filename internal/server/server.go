@@ -38,7 +38,9 @@ func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.URL.Path)
+
 	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
+
 	business, err := s.BusinessDao.GetBusiness(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, businessdao.ErrBusinessNotFound) {
@@ -49,15 +51,66 @@ func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 		writeErrorJSON(w, http.StatusInternalServerError, err)
 		return
 	}
+
 	writeJSON(w, http.StatusOK, business)
 }
 
+type BusinessCreateInput struct {
+	Name     string               `json:"name"`
+	Category businessdao.Category `json:"category"`
+}
+
 func (s *Server) CreateBusiness(w http.ResponseWriter, r *http.Request) {
-	// TODO:
+	// TODO: review this
+	fmt.Println(r.URL.Path)
+	var businessCreateInput BusinessCreateInput
+	err := json.NewDecoder(r.Body).Decode(&businessCreateInput)
+	if err != nil {
+		writeErrorJSON(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if strings.TrimSpace(businessCreateInput.Name) == "" {
+		writeErrorJSON(w, http.StatusBadRequest, errors.New("name cannot be empty"))
+		return
+	}
+	// TODO: add valid categories in error message
+	if !businessCreateInput.Category.IsValid() {
+		writeErrorJSON(w, http.StatusBadRequest, errors.New("invalid category"))
+		return
+	}
+
+
+	businessToCreateInput := businessdao.CreateInput{
+		Name:     businessCreateInput.Name,
+		Category: businessCreateInput.Category,
+	}
+	business, err := s.BusinessDao.Create(r.Context(), businessToCreateInput)
+	if err != nil {
+		writeErrorJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, business)
 }
 
 func (s *Server) DeleteBusiness(w http.ResponseWriter, r *http.Request) {
-	// TODO:
+	// TODO: review this
+	fmt.Println(r.URL.Path)
+
+	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
+	err := s.BusinessDao.Delete(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, businessdao.ErrBusinessNotFound) {
+			writeErrorJSON(w, http.StatusNotFound, err)
+			return
+		}
+
+		writeErrorJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, "successful deletion")
 }
 
 func writeErrorJSON(w http.ResponseWriter, status int, err error) {

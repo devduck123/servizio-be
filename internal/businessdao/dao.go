@@ -92,3 +92,13 @@ func (dao *Dao) Create(ctx context.Context, input CreateInput) (*Business, error
 	business.ID = doc.ID
 	return &business, nil
 }
+
+// TODO: review this
+func (dao *Dao) Delete(ctx context.Context, id string) error {
+	docRef := dao.fsClient.Collection(dao.businessCollectionName).Doc(id)
+	_, err := docRef.Delete(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
