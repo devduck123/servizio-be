@@ -98,3 +98,31 @@ func TestCreateBusiness_Valid(t *testing.T) {
 	assert.EqualValues(t, "pets", response.Category)
 	assert.NotEmpty(t, response.ID)
 }
+
+func TestServer(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	server := NewServer(dao) // This is the constructor that creates a "server"
+
+	httpServer := httptest.NewServer(http.HandlerFunc(server.BusinessRouter)) // This spins up a HTTP test server.
+	defer httpServer.Close()
+
+	body := bytes.NewReader([]byte(`{
+		"name": "test",
+		"category": "pets"
+	}`))
+	req, err := http.NewRequest(http.MethodPost, httpServer.URL+"/businesses/", body)
+	assert.NoError(t, err)
+
+	res, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+
+	var response businessdao.Business
+	err = json.NewDecoder(res.Body).Decode(&response)
+	assert.NoError(t, err)
+	assert.Equal(t, "test", response.Name)
+	assert.EqualValues(t, "pets", response.Category)
+	assert.NotEmpty(t, response.ID)
+
+}
