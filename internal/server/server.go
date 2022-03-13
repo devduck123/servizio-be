@@ -6,17 +6,64 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/devduck123/servizio-be/internal/businessdao"
 )
 
 type Server struct {
-	BusinessDao *businessdao.Dao
+	businessDao *businessdao.Dao
+	app         *firebase.App
 }
 
-func NewServer(businessDao *businessdao.Dao) *Server {
+func NewServer(businessDao *businessdao.Dao, app *firebase.App) *Server {
 	return &Server{
-		BusinessDao: businessDao,
+		businessDao: businessDao,
+		app:         app,
+	}
+}
+
+// TODO:
+func (s *Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// check req header here
+		// ensure JWT is valid
+		ctx := r.Context()
+
+		fmt.Println(r.Header)
+		idToken := r.Header.Get("Authorization")
+		fmt.Println(idToken)
+
+		client, err := s.app.Auth(ctx)
+		if err != nil {
+			fmt.Printf("error getting Auth client: %v\n", err)
+			writeErrorJSON(w, http.StatusInternalServerError, errors.New("something went wrong"))
+			return
+		}
+
+		token, err := client.VerifyIDToken(ctx, idToken)
+		if err != nil {
+			fmt.Printf("error verifying ID token: %v\n", err)
+			writeErrorJSON(w, http.StatusUnauthorized, errors.New("invalid credentials"))
+			return
+		}
+
+		fmt.Printf("Verified ID token: %v\n", token)
+
+		next(w, r)
+
+	}
+}
+
+func (s *Server) Logger(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		t := time.Now()
+		next(w, r)
+		duration := time.Since(t)
+
+		fmt.Printf("%v: %v %v took %v\n", t.Format(time.RFC3339), r.Method, r.URL.Path, duration)
 	}
 }
 
@@ -26,7 +73,7 @@ func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 		s.GetBusiness(w, r)
 		return
 	case http.MethodPost:
-		s.CreateBusiness(w, r)
+		s.Authenticate(s.CreateBusiness)(w, r)
 		return
 	case http.MethodDelete:
 		s.DeleteBusiness(w, r)
@@ -41,7 +88,7 @@ func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 
 	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
 
-	business, err := s.BusinessDao.GetBusiness(r.Context(), id)
+	business, err := s.businessDao.GetBusiness(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, businessdao.ErrBusinessNotFound) {
 			writeErrorJSON(w, http.StatusNotFound, err)
@@ -80,12 +127,11 @@ func (s *Server) CreateBusiness(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	businessToCreateInput := businessdao.CreateInput{
 		Name:     businessCreateInput.Name,
 		Category: businessCreateInput.Category,
 	}
-	business, err := s.BusinessDao.Create(r.Context(), businessToCreateInput)
+	business, err := s.businessDao.Create(r.Context(), businessToCreateInput)
 	if err != nil {
 		writeErrorJSON(w, http.StatusInternalServerError, err)
 		return
@@ -99,7 +145,7 @@ func (s *Server) DeleteBusiness(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.URL.Path)
 
 	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
-	err := s.BusinessDao.Delete(r.Context(), id)
+	err := s.businessDao.Delete(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, businessdao.ErrBusinessNotFound) {
 			writeErrorJSON(w, http.StatusNotFound, err)
