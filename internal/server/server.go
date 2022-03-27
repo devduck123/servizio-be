@@ -10,6 +10,7 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/devduck123/servizio-be/internal/businessdao"
+	"github.com/devduck123/servizio-be/internal/clientdao"
 )
 
 type Server struct {
@@ -17,7 +18,7 @@ type Server struct {
 	app         *firebase.App
 }
 
-func NewServer(businessDao *businessdao.Dao, app *firebase.App) *Server {
+func NewServer(businessDao *businessdao.Dao, clientDao *clientdao.Dao, app *firebase.App) *Server {
 	return &Server{
 		businessDao: businessDao,
 		app:         app,

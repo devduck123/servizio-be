@@ -19,13 +19,13 @@ type Business struct {
 }
 
 type Dao struct {
-	fsClient *firestore.Client
+	fsClient               *firestore.Client
 	businessCollectionName string
 }
 
 func NewDao(client *firestore.Client, businessCollectionName string) *Dao {
 	return &Dao{
-		fsClient: client,
+		fsClient:               client,
 		businessCollectionName: businessCollectionName,
 	}
 }

@@ -71,7 +71,7 @@ func deleteCollection(ctx context.Context, t *testing.T, fsClient *firestore.Cli
 func TestCreateBusiness_Invalid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil)
+	server := NewServer(dao, nil, nil)
 
 	w := httptest.NewRecorder()
 	body := bytes.NewReader([]byte(`{}`))
@@ -87,7 +87,7 @@ func TestCreateBusiness_Invalid(t *testing.T) {
 func TestCreateBusiness_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil)
+	server := NewServer(dao, nil, nil)
 
 	w := httptest.NewRecorder()
 	body := bytes.NewReader([]byte(`{
@@ -113,7 +113,7 @@ func TestServer(t *testing.T) {
 		ProjectID: projectID,
 	})
 	assert.NoError(t, err)
-	server := NewServer(dao, app) // This is the constructor that creates a "server"
+	server := NewServer(dao, nil, app) // This is the constructor that creates a "server"
 
 	httpServer := httptest.NewServer(http.HandlerFunc(server.BusinessRouter)) // This spins up a HTTP test server.
 	defer httpServer.Close()

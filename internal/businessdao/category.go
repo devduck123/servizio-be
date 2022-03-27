@@ -14,7 +14,7 @@ func (c Category) IsValid() bool {
 	for _, category := range allCategories {
 		if c == category {
 			return true
-		} 
+		}
 	}
 
 	return false

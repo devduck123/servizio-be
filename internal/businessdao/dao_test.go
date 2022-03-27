@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"cloud.google.com/go/firestore"
+	"github.com/devduck123/servizio-be/internal/firestoretest"
 	"github.com/google/uuid"
 	"github.com/tj/assert"
 )
@@ -20,39 +20,17 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func createTestDao(ctx context.Context, t *testing.T, keepCollection ...bool) *Dao {
-	t.Helper()
-
-	client, err := firestore.NewClient(ctx, "servizio-be")
-	assert.NoError(t, err)
+func createTestDao(ctx context.Context, t *testing.T) *Dao {
+	fsClient := firestoretest.CreateTestClient(ctx, t)
 	businessCollection := fmt.Sprintf("business-%v", uuid.New())
-	dao := NewDao(client, businessCollection)
 
-	cleanUp := true
-	for _, kc := range keepCollection {
-		if kc {
-			cleanUp = false
-			break
-		}
-	}
+	dao := NewDao(fsClient, businessCollection)
 
-	if cleanUp {
-		t.Cleanup(func() {
-			deleteCollection(ctx, t, client, businessCollection)
-		})
-	}
+	t.Cleanup(func() {
+		firestoretest.DeleteCollection(ctx, t, fsClient, businessCollection)
+	})
 
 	return dao
-}
-
-func deleteCollection(ctx context.Context, t *testing.T, fsClient *firestore.Client, collection string) {
-	documentRefs, err := fsClient.Collection(collection).DocumentRefs(ctx).GetAll()
-	assert.NoError(t, err)
-
-	for _, document := range documentRefs {
-		_, err := document.Delete(ctx)
-		assert.NoError(t, err)
-	}
 }
 
 func TestGetBusinessByID(t *testing.T) {

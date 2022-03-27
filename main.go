@@ -11,6 +11,7 @@ import (
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
 	"github.com/devduck123/servizio-be/internal/businessdao"
+	"github.com/devduck123/servizio-be/internal/clientdao"
 	"github.com/devduck123/servizio-be/internal/server"
 )
 
@@ -38,20 +39,21 @@ func run(ctx context.Context) error {
 
 	projectID := "servizio-be"
 
-	client, err := firestore.NewClient(ctx, projectID)
+	fsClient, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		return err
 	}
 
-	businessDao := businessdao.NewDao(client, "businesses")
+	businessDao := businessdao.NewDao(fsClient, "businesses")
+	clientDao := clientdao.NewDao(fsClient, "clients")
 	app, err := firebase.NewApp(ctx, &firebase.Config{
-		ProjectID:        projectID,
+		ProjectID: projectID,
 	})
 	if err != nil {
 		return err
 	}
 
-	s := server.NewServer(businessDao, app)
+	s := server.NewServer(businessDao, clientDao, app)
 	http.HandleFunc("/businesses/", s.Logger(s.BusinessRouter))
 	fmt.Println("listening on port 3000")
 	if err := http.ListenAndServe(":3000", nil); err != nil {
