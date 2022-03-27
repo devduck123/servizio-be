@@ -32,9 +32,7 @@ func (s *Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 		// ensure JWT is valid
 		ctx := r.Context()
 
-		fmt.Println(r.Header)
 		idToken := r.Header.Get("Authorization")
-		fmt.Println(idToken)
 
 		client, err := s.app.Auth(ctx)
 		if err != nil {
@@ -50,7 +48,17 @@ func (s *Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("Verified ID token: %v\n", token)
+		expiresAt := time.Unix(token.Expires, 0)
+		if time.Now().After(expiresAt) {
+			writeErrorJSON(w, http.StatusUnauthorized, errors.New("token expired"))
+			return
+		}
+
+		emailVerified := token.Claims["email_verified"].(bool)
+		if !emailVerified {
+			writeErrorJSON(w, http.StatusUnauthorized, errors.New("email not verified"))
+			return
+		}
 
 		next(w, r)
 
