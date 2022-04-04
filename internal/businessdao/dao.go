@@ -16,6 +16,7 @@ type Business struct {
 	Name     string   `json:"name" firestore:"name"`
 	Images   []string `json:"images,omitempty" firestore:"images,omitempty"`
 	Category Category `json:"category" firestore:"category"`
+	UserID   string   `json:"userId" firestore:"userId"`
 }
 
 type Dao struct {
@@ -77,12 +78,14 @@ func (dao *Dao) GetAllBusinesses(ctx context.Context, input GetAllBusinessesInpu
 type CreateInput struct {
 	Name     string
 	Category Category
+	UserID   string
 }
 
 func (dao *Dao) Create(ctx context.Context, input CreateInput) (*Business, error) {
 	business := Business{
 		Name:     input.Name,
 		Category: input.Category,
+		UserID:   input.UserID,
 	}
 
 	doc, _, err := dao.fsClient.Collection(dao.businessCollectionName).Add(ctx, business)

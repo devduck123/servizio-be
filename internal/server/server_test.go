@@ -76,6 +76,7 @@ func TestCreateBusiness_Invalid(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := bytes.NewReader([]byte(`{}`))
 	r := httptest.NewRequest(http.MethodPost, "/", body)
+	r = r.WithContext(ContextWithUser(ctx, User{}))
 	server.CreateBusiness(w, r)
 	assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
 
@@ -95,6 +96,7 @@ func TestCreateBusiness_Valid(t *testing.T) {
 		"category": "pets"
 	}`))
 	r := httptest.NewRequest(http.MethodPost, "/", body)
+	r = r.WithContext(ContextWithUser(ctx, User{}))
 	server.CreateBusiness(w, r)
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
@@ -138,5 +140,23 @@ func TestServer(t *testing.T) {
 	assert.Equal(t, "test", response.Name)
 	assert.EqualValues(t, "pets", response.Category)
 	assert.NotEmpty(t, response.ID)
+
+}
+
+func TestUserFromContext_NotFound(t *testing.T) {
+	ctx := context.Background()
+	_, err := UserFromContext(ctx)
+	assert.EqualError(t, err, "user object missing")
+}
+
+func TestUserFromContext_Found(t *testing.T) {
+	ctx := context.Background()
+	user := User{
+		ID: "123",
+	}
+	ctx = context.WithValue(ctx, UserKey, user)
+	gotUser, err := UserFromContext(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, user.ID, gotUser.ID)
 
 }

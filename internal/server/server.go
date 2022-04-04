@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,7 +26,12 @@ func NewServer(businessDao *businessdao.Dao, clientDao *clientdao.Dao, app *fire
 	}
 }
 
-// TODO:
+type User struct {
+	ID string
+}
+
+var UserKey struct{}
+
 func (s *Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -61,9 +67,33 @@ func (s *Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		user := User{
+			ID: token.Subject,
+		}
+		// update context with user object and UID
+		r = r.WithContext(context.WithValue(ctx, UserKey, user))
+
 		next(w, r)
 
 	}
+}
+
+func UserFromContext(ctx context.Context) (User, error) {
+	rawUser := ctx.Value(UserKey)
+	if rawUser == nil {
+		return User{}, errors.New("user object missing")
+	}
+
+	user, ok := rawUser.(User)
+	if !ok {
+		panic("invalid user object")
+	}
+
+	return user, nil
+}
+
+func ContextWithUser(ctx context.Context, user User) context.Context {
+	return context.WithValue(ctx, UserKey, user)
 }
 
 func (s *Server) Logger(next http.HandlerFunc) http.HandlerFunc {
@@ -117,10 +147,16 @@ type BusinessCreateInput struct {
 }
 
 func (s *Server) CreateBusiness(w http.ResponseWriter, r *http.Request) {
+	user, err := UserFromContext(r.Context())
+	if err != nil {
+		writeErrorJSON(w, http.StatusUnauthorized, err)
+		return
+	}
+
 	// TODO: review this
 	fmt.Println(r.URL.Path)
 	var businessCreateInput BusinessCreateInput
-	err := json.NewDecoder(r.Body).Decode(&businessCreateInput)
+	err = json.NewDecoder(r.Body).Decode(&businessCreateInput)
 	if err != nil {
 		writeErrorJSON(w, http.StatusBadRequest, err)
 		return
@@ -139,6 +175,7 @@ func (s *Server) CreateBusiness(w http.ResponseWriter, r *http.Request) {
 	businessToCreateInput := businessdao.CreateInput{
 		Name:     businessCreateInput.Name,
 		Category: businessCreateInput.Category,
+		UserID:   user.ID,
 	}
 	business, err := s.businessDao.Create(r.Context(), businessToCreateInput)
 	if err != nil {
