@@ -34,9 +34,6 @@ var UserKey struct{}
 
 func (s *Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// check req header here
-		// ensure JWT is valid
 		ctx := r.Context()
 
 		idToken := r.Header.Get("Authorization")

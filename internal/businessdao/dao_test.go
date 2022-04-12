@@ -59,20 +59,6 @@ func TestGetBusiness_NotExists(t *testing.T) {
 	assert.Nil(t, gotBusiness)
 }
 
-func TestCreateBusiness(t *testing.T) {
-	ctx := context.Background()
-	dao := createTestDao(ctx, t)
-
-	input := CreateInput{
-		Name: "foobarbaz",
-	}
-	business, err := dao.Create(ctx, input)
-	assert.NoError(t, err)
-	assert.NotNil(t, business)
-	assert.NotEmpty(t, business.ID)
-	assert.Equal(t, input.Name, business.Name)
-}
-
 func TestGetAllBusinesses(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
@@ -90,4 +76,37 @@ func TestGetAllBusinesses(t *testing.T) {
 	allBusinesses, err := dao.GetAllBusinesses(ctx, getAllBusinessesInput)
 	assert.NoError(t, err)
 	assert.Len(t, allBusinesses, 1)
+}
+
+func TestCreateBusiness(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+
+	input := CreateInput{
+		Name: "foobarbaz",
+	}
+	business, err := dao.Create(ctx, input)
+	assert.NoError(t, err)
+	assert.NotNil(t, business)
+	assert.NotEmpty(t, business.ID)
+	assert.Equal(t, input.Name, business.Name)
+}
+
+func TestDeleteBusiness(t *testing.T) {
+	// first create the business
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+
+	input := CreateInput{
+		Name: "foobarbaz",
+	}
+	business, err := dao.Create(ctx, input)
+	assert.NoError(t, err)
+	assert.NotNil(t, business)
+	assert.NotEmpty(t, business.ID)
+	assert.Equal(t, input.Name, business.Name)
+
+	// then delete the business
+	err = dao.Delete(ctx, business.ID)
+	assert.NoError(t, err)
 }
