@@ -112,7 +112,7 @@ func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 		s.Authenticate(s.CreateBusiness)(w, r)
 		return
 	case http.MethodDelete:
-		s.DeleteBusiness(w, r)
+		s.Authenticate(s.DeleteBusiness)(w, r)
 		return
 	default:
 		writeErrorJSON(w, http.StatusNotImplemented, fmt.Errorf("%v not implemented yet", r.Method))
@@ -138,6 +138,28 @@ func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, business)
 }
 
+//TODO: write GetAllBusinesses
+func (s *Server) GetAllBusinesses(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.URL.Path)
+
+	category := strings.TrimPrefix(r.URL.Path, "/businesses")
+	input := businessdao.GetAllBusinessesInput{
+		Category: businessdao.Category(category),
+	}
+
+	allBusinesses, err := s.businessDao.GetAllBusinesses(r.Context(), input)
+	if err != nil {
+		writeErrorJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+	if !input.Category.IsValid() {
+		writeErrorJSON(w, http.StatusBadRequest, errors.New("invalid category"))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, allBusinesses)
+}
+
 type BusinessCreateInput struct {
 	Name     string               `json:"name"`
 	Category businessdao.Category `json:"category"`
@@ -150,7 +172,6 @@ func (s *Server) CreateBusiness(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: review this
 	fmt.Println(r.URL.Path)
 	var businessCreateInput BusinessCreateInput
 	err = json.NewDecoder(r.Body).Decode(&businessCreateInput)
@@ -184,7 +205,6 @@ func (s *Server) CreateBusiness(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) DeleteBusiness(w http.ResponseWriter, r *http.Request) {
-	// TODO: review this
 	fmt.Println(r.URL.Path)
 
 	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
