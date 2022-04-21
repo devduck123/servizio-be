@@ -138,11 +138,11 @@ func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, business)
 }
 
-//TODO: write GetAllBusinesses
 func (s *Server) GetAllBusinesses(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.URL.Path)
+	fmt.Println(r.URL.RawQuery)
 
-	category := strings.TrimPrefix(r.URL.Path, "/businesses")
+	category := strings.TrimPrefix(r.URL.RawQuery, "category=")
 	input := businessdao.GetAllBusinessesInput{
 		Category: businessdao.Category(category),
 	}
@@ -152,7 +152,7 @@ func (s *Server) GetAllBusinesses(w http.ResponseWriter, r *http.Request) {
 		writeErrorJSON(w, http.StatusInternalServerError, err)
 		return
 	}
-	if !input.Category.IsValid() {
+	if !input.Category.IsValid() && input.Category != "" {
 		writeErrorJSON(w, http.StatusBadRequest, errors.New("invalid category"))
 		return
 	}

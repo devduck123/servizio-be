@@ -152,6 +152,76 @@ func TestGetBusiness_Valid(t *testing.T) {
 	assert.Equal(t, business.ID, response.ID)
 }
 
+func TestGetAllBusinesses_Valid(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	server := NewServer(dao, nil, nil)
+
+	_, err := dao.Create(ctx, businessdao.CreateInput{
+		Name:     "foo",
+		Category: businessdao.CategoryPets,
+	})
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, businessdao.CreateInput{
+		Name:     "bar",
+		Category: businessdao.CategoryPets,
+	})
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, businessdao.CreateInput{
+		Name:     "baz",
+		Category: businessdao.CategoryAutomotive,
+	})
+	assert.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/businesses", nil)
+	r = r.WithContext(ContextWithUser(ctx, User{}))
+
+	server.GetAllBusinesses(w, r)
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	var response []businessdao.Business
+	err = json.NewDecoder(w.Result().Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, len(response), 3)
+}
+
+func TestGetAllBusinessesByCategory_Valid(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	server := NewServer(dao, nil, nil)
+
+	_, err := dao.Create(ctx, businessdao.CreateInput{
+		Name:     "foo",
+		Category: businessdao.CategoryPets,
+	})
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, businessdao.CreateInput{
+		Name:     "bar",
+		Category: businessdao.CategoryPets,
+	})
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, businessdao.CreateInput{
+		Name:     "baz",
+		Category: businessdao.CategoryAutomotive,
+	})
+	assert.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/businesses?category=pets", nil)
+	r = r.WithContext(ContextWithUser(ctx, User{}))
+
+	server.GetAllBusinesses(w, r)
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	var response []businessdao.Business
+	err = json.NewDecoder(w.Result().Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, len(response), 2)
+}
+
 func TestServer(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
