@@ -108,6 +108,23 @@ func TestCreateBusiness_Valid(t *testing.T) {
 	assert.NotEmpty(t, response.ID)
 }
 
+func TestGetBusiness_Invalid(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	server := NewServer(dao, nil, nil)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/businesses/foo", nil)
+	r = r.WithContext(ContextWithUser(ctx, User{}))
+
+	server.GetBusiness(w, r)
+	assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
+
+	var response businessdao.Business
+	err := json.NewDecoder(w.Result().Body).Decode(&response)
+	assert.NoError(t, err)
+}
+
 func TestGetBusiness_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
@@ -118,7 +135,7 @@ func TestGetBusiness_Valid(t *testing.T) {
 		Category: businessdao.CategoryPets,
 	})
 	assert.NoError(t, err)
-	
+
 	businessURL := fmt.Sprintf("/businesses/%s", business.ID)
 
 	w := httptest.NewRecorder()
@@ -126,7 +143,6 @@ func TestGetBusiness_Valid(t *testing.T) {
 	r = r.WithContext(ContextWithUser(ctx, User{}))
 
 	server.GetBusiness(w, r)
-
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
 	var response businessdao.Business
