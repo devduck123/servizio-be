@@ -121,9 +121,9 @@ func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.URL.Path)
-
+	
 	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
-
+	
 	business, err := s.businessDao.GetBusiness(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, businessdao.ErrBusinessNotFound) {

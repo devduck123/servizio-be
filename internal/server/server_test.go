@@ -108,6 +108,34 @@ func TestCreateBusiness_Valid(t *testing.T) {
 	assert.NotEmpty(t, response.ID)
 }
 
+func TestGetBusiness_Valid(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	server := NewServer(dao, nil, nil)
+
+	business, err := dao.Create(ctx, businessdao.CreateInput{
+		Name:     "foo",
+		Category: businessdao.CategoryPets,
+	})
+	assert.NoError(t, err)
+	
+	businessURL := fmt.Sprintf("/businesses/%s", business.ID)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, businessURL, nil)
+	r = r.WithContext(ContextWithUser(ctx, User{}))
+
+	server.GetBusiness(w, r)
+
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	var response businessdao.Business
+	err = json.NewDecoder(w.Result().Body).Decode(&response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, business.ID, response.ID)
+}
+
 func TestServer(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
