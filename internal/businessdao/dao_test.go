@@ -59,7 +59,7 @@ func TestGetBusiness_NotExists(t *testing.T) {
 	assert.Nil(t, gotBusiness)
 }
 
-func TestGetAllBusinesses(t *testing.T) {
+func TestGetAllBusinesses_ByCategory(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
 
@@ -67,7 +67,13 @@ func TestGetAllBusinesses(t *testing.T) {
 		Name:     "foo",
 		Category: CategoryAutomotive,
 	}
+	createInput2 := CreateInput{
+		Name:     "bar",
+		Category: CategoryPets,
+	}
 	_, err := dao.Create(ctx, createInput)
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, createInput2)
 	assert.NoError(t, err)
 
 	getAllBusinessesInput := GetAllBusinessesInput{
@@ -76,6 +82,29 @@ func TestGetAllBusinesses(t *testing.T) {
 	allBusinesses, err := dao.GetAllBusinesses(ctx, getAllBusinessesInput)
 	assert.NoError(t, err)
 	assert.Len(t, allBusinesses, 1)
+}
+
+func TestGetAllBusinesses(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+
+	createInput := CreateInput{
+		Name:     "foo",
+		Category: CategoryAutomotive,
+	}
+	createInput2 := CreateInput{
+		Name:     "bar",
+		Category: CategoryPets,
+	}
+	_, err := dao.Create(ctx, createInput)
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, createInput2)
+	assert.NoError(t, err)
+
+	getAllBusinessesInput := GetAllBusinessesInput{}
+	allBusinesses, err := dao.GetAllBusinesses(ctx, getAllBusinessesInput)
+	assert.NoError(t, err)
+	assert.Len(t, allBusinesses, 2)
 }
 
 func TestCreateBusiness(t *testing.T) {

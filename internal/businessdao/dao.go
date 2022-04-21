@@ -55,9 +55,11 @@ type GetAllBusinessesInput struct {
 }
 
 func (dao *Dao) GetAllBusinesses(ctx context.Context, input GetAllBusinessesInput) ([]Business, error) {
-	snapshots, err := dao.fsClient.Collection(dao.businessCollectionName).
-		Where("category", "==", input.Category).
-		Documents(ctx).GetAll()
+	query := dao.fsClient.Collection(dao.businessCollectionName).Query
+	if input.Category != "" {
+		query = query.Where("category", "==", input.Category)
+	}
+	snapshots, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
 	}
