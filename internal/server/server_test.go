@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -222,6 +223,39 @@ func TestGetAllBusinessesByCategory_Valid(t *testing.T) {
 	assert.Equal(t, len(response), 2)
 }
 
+func TestGetAllBusinessesByCategory_Invalid(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	server := NewServer(dao, nil, nil)
+
+	_, err := dao.Create(ctx, businessdao.CreateInput{
+		Name:     "foo",
+		Category: businessdao.CategoryPets,
+	})
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, businessdao.CreateInput{
+		Name:     "bar",
+		Category: businessdao.CategoryPets,
+	})
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, businessdao.CreateInput{
+		Name:     "baz",
+		Category: businessdao.CategoryAutomotive,
+	})
+	assert.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/businesses?category=pokemon", nil)
+	r = r.WithContext(ContextWithUser(ctx, User{}))
+
+	server.GetAllBusinesses(w, r)
+	assert.Equal(t, http.StatusBadRequest, w.Result().StatusCode)
+
+	raw, err := io.ReadAll(w.Result().Body)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"error":"invalid category"}`, string(raw))
+}
+
 func TestServer(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
@@ -254,7 +288,72 @@ func TestServer(t *testing.T) {
 	assert.Equal(t, "test", response.Name)
 	assert.EqualValues(t, "pets", response.Category)
 	assert.NotEmpty(t, response.ID)
+}
 
+func TestServer_GetBusiness(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	app, err := firebase.NewApp(ctx, &firebase.Config{
+		ProjectID: projectID,
+	})
+	assert.NoError(t, err)
+	server := NewServer(dao, nil, app) // This is the constructor that creates a "server"
+	
+	input := businessdao.CreateInput{
+		Name:     "foo",
+		Category: businessdao.CategoryPets,
+	}
+	business, err := dao.Create(ctx, input)
+	assert.NoError(t, err)
+
+	httpServer := httptest.NewServer(http.HandlerFunc(server.BusinessRouter)) // This spins up a HTTP test server.
+	defer httpServer.Close()
+	
+	req, err := http.NewRequest(http.MethodGet, httpServer.URL+"/businesses/"+business.ID, nil)
+	assert.NoError(t, err)
+
+	res, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+
+	var response businessdao.Business
+	err = json.NewDecoder(res.Body).Decode(&response)
+	assert.NoError(t, err)
+	assert.Equal(t, "foo", response.Name)
+	assert.EqualValues(t, businessdao.CategoryPets, response.Category)
+	assert.Equal(t, business.ID, response.ID)
+}
+
+func TestServer_GetAllBusinesses(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	app, err := firebase.NewApp(ctx, &firebase.Config{
+		ProjectID: projectID,
+	})
+	assert.NoError(t, err)
+	server := NewServer(dao, nil, app) // This is the constructor that creates a "server"
+	
+	input := businessdao.CreateInput{
+		Name:     "foo",
+		Category: businessdao.CategoryPets,
+	}
+	_, err = dao.Create(ctx, input)
+	assert.NoError(t, err)
+
+	httpServer := httptest.NewServer(http.HandlerFunc(server.BusinessRouter)) // This spins up a HTTP test server.
+	defer httpServer.Close()
+	
+	req, err := http.NewRequest(http.MethodGet, httpServer.URL+"/businesses", nil)
+	assert.NoError(t, err)
+
+	res, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+
+	var response []businessdao.Business
+	err = json.NewDecoder(res.Body).Decode(&response)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(response))
 }
 
 func TestUserFromContext_NotFound(t *testing.T) {

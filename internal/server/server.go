@@ -106,6 +106,11 @@ func (s *Server) Logger(next http.HandlerFunc) http.HandlerFunc {
 func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
+		businessID := strings.TrimPrefix(r.URL.Path, "/businesses")
+		if businessID == "" {
+			s.GetAllBusinesses(w, r)
+			return
+		}
 		s.GetBusiness(w, r)
 		return
 	case http.MethodPost:
@@ -120,7 +125,7 @@ func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
+	fmt.Println("GetBusiness called on:", r.URL.Path)
 	
 	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
 	
@@ -139,8 +144,8 @@ func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetAllBusinesses(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
-	fmt.Println(r.URL.RawQuery)
+	fmt.Println("GetAllBusinesses called on:", r.URL.Path)
+	fmt.Println("GetAllBusinesses called on:", r.URL.RawQuery)
 
 	category := strings.TrimPrefix(r.URL.RawQuery, "category=")
 	input := businessdao.GetAllBusinessesInput{
