@@ -9,6 +9,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/tj/assert"
+	"google.golang.org/api/option"
 )
 
 // var projectID = "servizio-be"
@@ -28,7 +29,29 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestImageManager(t *testing.T) {
+func TestUploadImage(t *testing.T) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	assert.NoError(t, err)
+	defer client.Close()
+
+	im := ImageManager{
+		API:        client,
+		BucketName: "servizio-be.appspot.com/foo",
+	}
+
+	raw := []byte("hello")
+	image, err := im.UploadImage(ctx, raw)
+	assert.NoError(t, err)
+
+	fmt.Println("image key:", image.Key)
+
+	gotRaw, err := im.GetImage(ctx, image.Key)
+	assert.NoError(t, err)
+	assert.Equal(t, raw, gotRaw)
+}
+
+func TestGetImage(t *testing.T) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	assert.NoError(t, err)
@@ -39,10 +62,60 @@ func TestImageManager(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	image, err := im.UploadImage(ctx, []byte("hello"))
+	imageName, err := im.GetImage(ctx, "351e3547-eee4-405e-a3e9-41b317dd3915")
 	assert.NoError(t, err)
 
-	fmt.Println(image.Key)
-	fmt.Println(image.SignedURL)
+	fmt.Println(imageName)
+}
 
+func TestGetImages(t *testing.T) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx,
+		option.WithEndpoint("http://localhost:9199/storage/v1/"))
+	assert.NoError(t, err)
+	defer client.Close()
+
+	im := ImageManager{
+		API:        client,
+		BucketName: "servizio-be.appspot.com",
+	}
+
+	imageNames, err := im.GetImages(ctx)
+	assert.NoError(t, err)
+
+	fmt.Println(imageNames)
+}
+
+func TestCreateBucket(t *testing.T) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	assert.NoError(t, err)
+	defer client.Close()
+
+	im := ImageManager{
+		API:        client,
+		BucketName: "servizio-be.appspot.com",
+	}
+
+	result, err := im.CreateBucket(ctx, "servizio-be.appspot.com/world")
+	assert.NoError(t, err)
+
+	fmt.Println(result)
+}
+
+func TestDeleteBucket(t *testing.T) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	assert.NoError(t, err)
+	defer client.Close()
+
+	im := ImageManager{
+		API:        client,
+		BucketName: "servizio-be.appspot.com",
+	}
+
+	result, err := im.DeleteBucket(ctx, "servizio-be.appspot.com/hello")
+	assert.NoError(t, err)
+
+	fmt.Println(result)
 }
