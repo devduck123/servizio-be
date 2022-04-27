@@ -69,7 +69,7 @@ func (i ImageManager) GetImages(ctx context.Context) ([]string, error) {
 
 	fmt.Println("bucket name:", i.BucketName)
 	fmt.Println("bucket:", bucket)
-
+	
 	var names []string
 	it := bucket.Objects(ctx, nil)
 	pageInfo := it.PageInfo()
