@@ -9,7 +9,6 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/tj/assert"
-	"google.golang.org/api/option"
 )
 
 // var projectID = "servizio-be"
@@ -37,7 +36,7 @@ func TestUploadImage(t *testing.T) {
 
 	im := ImageManager{
 		API:        client,
-		BucketName: "servizio-be.appspot.com/foo",
+		BucketName: "servizio-be.appspot.com",
 	}
 
 	raw := []byte("hello")
@@ -62,16 +61,16 @@ func TestGetImage(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	imageName, err := im.GetImage(ctx, "351e3547-eee4-405e-a3e9-41b317dd3915")
+	gotRaw, err := im.GetImage(ctx, "9520f5d1-6fe8-4d18-8546-9909bbbbe22d")
 	assert.NoError(t, err)
 
-	fmt.Println(imageName)
+	assert.Equal(t, []byte("hello"), gotRaw)
+	fmt.Println(string(gotRaw))
 }
 
 func TestGetImages(t *testing.T) {
 	ctx := context.Background()
-	client, err := storage.NewClient(ctx,
-		option.WithEndpoint("http://localhost:9199/storage/v1/"))
+	client, err := storage.NewClient(ctx)
 	assert.NoError(t, err)
 	defer client.Close()
 

@@ -3,6 +3,7 @@ package businessdao
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
@@ -104,5 +105,34 @@ func (dao *Dao) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// TODO: update Business when uploading image
+// 		 call this method in image package?
+func (dao *Dao) AppendImage(ctx context.Context, id string, imageURL string) error {
+	docRef := dao.fsClient.Collection(dao.businessCollectionName).Doc(id)
+	snapshot, err := docRef.Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return ErrBusinessNotFound
+		}
+		return err
+	}
+	var business *Business
+	if err := snapshot.DataTo(&business); err != nil {
+		return err
+	}
+
+	fmt.Printf("before AppendImage: %+v\n", business)
+	business.Images = append(business.Images, imageURL)
+	fmt.Printf("after AppendImage: %+v\n", business)
+
+	// update business in firestore
+	_, err = docRef.Set(ctx, business)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -139,3 +139,18 @@ func TestDeleteBusiness(t *testing.T) {
 	err = dao.Delete(ctx, business.ID)
 	assert.NoError(t, err)
 }
+
+func TestAppendImage(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+
+	input := CreateInput{
+		Name: "foobarbaz",
+	}
+	business, err := dao.Create(ctx, input)
+	assert.NoError(t, err)
+
+	dao.AppendImage(ctx, business.ID, "test1")
+	dao.AppendImage(ctx, business.ID, "test2")
+	dao.AppendImage(ctx, business.ID, "test3")
+}

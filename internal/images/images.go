@@ -69,7 +69,7 @@ func (i ImageManager) GetImages(ctx context.Context) ([]string, error) {
 
 	fmt.Println("bucket name:", i.BucketName)
 	fmt.Println("bucket:", bucket)
-	
+
 	var names []string
 	it := bucket.Objects(ctx, nil)
 	pageInfo := it.PageInfo()
@@ -105,7 +105,7 @@ func (i ImageManager) DeleteBucket(ctx context.Context, bucketName string) (stri
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("successfully deleted bucket%s", bucketName), nil
+	return fmt.Sprintf("successfully deleted bucket %s", bucketName), nil
 }
 
 func (i ImageManager) GetSignedURL(ctx context.Context) (Image, error) {
