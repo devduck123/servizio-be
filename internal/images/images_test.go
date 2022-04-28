@@ -7,7 +7,9 @@ import (
 	"os"
 	"testing"
 
+	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/storage"
+	"github.com/devduck123/servizio-be/internal/businessdao"
 	"github.com/tj/assert"
 )
 
@@ -39,9 +41,21 @@ func TestUploadImage(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	raw := []byte("hello")
-	image, err := im.UploadImage(ctx, raw)
+	fsClient, err := firestore.NewClient(ctx, projectID)
 	assert.NoError(t, err)
+	dao := businessdao.NewDao(fsClient, projectID)
+	business, err := dao.Create(ctx, businessdao.CreateInput{
+		Name: "foo",
+	})
+	assert.NoError(t, err)
+
+	raw := []byte("hello")
+	image, err := im.UploadImage(ctx, business.ID, raw)
+	assert.NoError(t, err)
+
+	gotBusiness, err := dao.GetBusiness(ctx, business.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(gotBusiness.Images))
 
 	fmt.Println("image key:", image.Key)
 
@@ -79,10 +93,22 @@ func TestGetImages(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	imageNames, err := im.GetImages(ctx)
+	// we need to create a business,
+	// then give it some images,
+	// then call GetImages(ctx, business.ID)
+	fsClient, err := firestore.NewClient(ctx, projectID)
+	assert.NoError(t, err)
+	dao := businessdao.NewDao(fsClient, projectID)
+	input := businessdao.CreateInput{
+		Name: "foobarbaz",
+	}
+	business, err := dao.Create(ctx, input)
 	assert.NoError(t, err)
 
-	fmt.Println(imageNames)
+	gotRaws, err := im.GetImages(ctx, business.ID)
+	assert.NoError(t, err)
+
+	fmt.Println(gotRaws)
 }
 
 func TestCreateBucket(t *testing.T) {

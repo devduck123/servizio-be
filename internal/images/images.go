@@ -6,9 +6,10 @@ import (
 	"io/ioutil"
 	"time"
 
+	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/storage"
+	"github.com/devduck123/servizio-be/internal/businessdao"
 	"github.com/google/uuid"
-	"google.golang.org/api/iterator"
 )
 
 var projectID = "servizio-be"
@@ -23,7 +24,7 @@ type ImageManager struct {
 	BucketName string
 }
 
-func (i ImageManager) UploadImage(ctx context.Context, raw []byte) (Image, error) {
+func (i ImageManager) UploadImage(ctx context.Context, id string, raw []byte) (Image, error) {
 	key := uuid.New().String()
 
 	bucket := i.API.Bucket(i.BucketName)
@@ -37,12 +38,21 @@ func (i ImageManager) UploadImage(ctx context.Context, raw []byte) (Image, error
 		return Image{}, fmt.Errorf("Writer.Close: %v", err)
 	}
 
+	// AppendImage to business in firestore
+	fsClient, err := firestore.NewClient(ctx, projectID)
+	if err != nil {
+		return Image{}, err
+	}
+	dao := businessdao.NewDao(fsClient, projectID)
+	if err = dao.AppendImage(ctx, id, key); err != nil {
+		return Image{}, err
+	}
+
 	return Image{
 		Key: key,
 	}, nil
 }
 
-// TODO: convert this to return Image instead of the image name
 func (i ImageManager) GetImage(ctx context.Context, key string) ([]byte, error) {
 	bucket := i.API.Bucket(i.BucketName)
 	object := bucket.Object(key)
@@ -63,31 +73,33 @@ func (i ImageManager) GetImage(ctx context.Context, key string) ([]byte, error) 
 	return raw, nil
 }
 
-// TODO: convert this to return []Image instead of the slice of image names
-func (i ImageManager) GetImages(ctx context.Context) ([]string, error) {
-	bucket := i.API.Bucket(i.BucketName)
-
-	fmt.Println("bucket name:", i.BucketName)
-	fmt.Println("bucket:", bucket)
-
-	var names []string
-	it := bucket.Objects(ctx, nil)
-	pageInfo := it.PageInfo()
-	fmt.Println("remaining:", pageInfo.Remaining())
-	for {
-		attrs, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		names = append(names, attrs.Name)
+// TODO: convert this to iterate a keys []string
+// 		 and essentially call GetImage() on each ...
+// 		 append those raw byte slices to a slice and return
+//
+// 		 keys[] string comes from the business belonging to
+// 		 `id`
+func (i ImageManager) GetImages(ctx context.Context, id string) ([][]byte, error) {
+	fsClient, err := firestore.NewClient(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	dao := businessdao.NewDao(fsClient, projectID)
+	business, err := dao.GetBusiness(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
-	fmt.Println(names)
+	fmt.Println(business.Images)
 
-	return names, nil
+	// TODO: call GetImage on all the business.Images
+	// 		 1. parse keys out of business.Images
+	// 		 2. iterate keys, call GetImage on each key
+	// 		 3. add result of call to raws
+
+	var raws [][]byte
+
+	return raws, nil
 }
 
 func (i ImageManager) CreateBucket(ctx context.Context, bucketName string) (string, error) {

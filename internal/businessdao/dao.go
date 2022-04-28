@@ -108,19 +108,9 @@ func (dao *Dao) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// TODO: update Business when uploading image
-// 		 call this method in image package?
 func (dao *Dao) AppendImage(ctx context.Context, id string, imageURL string) error {
-	docRef := dao.fsClient.Collection(dao.businessCollectionName).Doc(id)
-	snapshot, err := docRef.Get(ctx)
+	business, err := dao.GetBusiness(ctx, id)
 	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			return ErrBusinessNotFound
-		}
-		return err
-	}
-	var business *Business
-	if err := snapshot.DataTo(&business); err != nil {
 		return err
 	}
 
@@ -129,6 +119,7 @@ func (dao *Dao) AppendImage(ctx context.Context, id string, imageURL string) err
 	fmt.Printf("after AppendImage: %+v\n", business)
 
 	// update business in firestore
+	docRef := dao.fsClient.Collection(dao.businessCollectionName).Doc(id)
 	_, err = docRef.Set(ctx, business)
 	if err != nil {
 		return err

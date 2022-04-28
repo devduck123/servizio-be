@@ -153,4 +153,9 @@ func TestAppendImage(t *testing.T) {
 	dao.AppendImage(ctx, business.ID, "test1")
 	dao.AppendImage(ctx, business.ID, "test2")
 	dao.AppendImage(ctx, business.ID, "test3")
+
+	business, err = dao.GetBusiness(ctx, business.ID)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 3, len(business.Images))
 }
