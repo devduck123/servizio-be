@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/storage"
 	"github.com/devduck123/servizio-be/internal/businessdao"
+	"github.com/devduck123/servizio-be/internal/firestoretest"
 	"github.com/tj/assert"
 )
 
@@ -30,6 +30,19 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+func createTestDao(ctx context.Context, t *testing.T) *businessdao.Dao {
+	fsClient := firestoretest.CreateTestClient(ctx, t)
+
+	businessCollectionName := "businesses"
+	dao := businessdao.NewDao(fsClient, businessCollectionName)
+
+	t.Cleanup(func() {
+		firestoretest.DeleteCollection(ctx, t, fsClient, businessCollectionName)
+	})
+
+	return dao
+}
+
 func TestUploadImage(t *testing.T) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
@@ -41,9 +54,7 @@ func TestUploadImage(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	fsClient, err := firestore.NewClient(ctx, projectID)
-	assert.NoError(t, err)
-	dao := businessdao.NewDao(fsClient, "businesses")
+	dao := createTestDao(ctx, t)
 	business, err := dao.Create(ctx, businessdao.CreateInput{
 		Name: "foo",
 	})
@@ -64,7 +75,7 @@ func TestUploadImage(t *testing.T) {
 	assert.Equal(t, raw, gotRaw)
 }
 
-func TestGetImage(t *testing.T) {
+func TestGetImage_Exists(t *testing.T) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	assert.NoError(t, err)
@@ -93,9 +104,7 @@ func TestGetImages(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	fsClient, err := firestore.NewClient(ctx, projectID)
-	assert.NoError(t, err)
-	dao := businessdao.NewDao(fsClient, "businesses")
+	dao := createTestDao(ctx, t)
 	input := businessdao.CreateInput{
 		Name: "foo",
 	}
