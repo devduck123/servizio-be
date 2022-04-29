@@ -61,6 +61,28 @@ func TestGetClient_NotExists(t *testing.T) {
 	assert.Nil(t, gotClient)
 }
 
+func TestGetAllClients(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+
+	createInput := CreateInput{
+		FirstName: "foo",
+		LastName:  "dog",
+	}
+	createInput2 := CreateInput{
+		FirstName: "bar",
+		LastName:  "cat",
+	}
+	_, err := dao.Create(ctx, createInput)
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, createInput2)
+	assert.NoError(t, err)
+
+	allClients, err := dao.GetAllClients(ctx)
+	assert.NoError(t, err)
+	assert.Len(t, allClients, 2)
+}
+
 func TestCreateClient(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
@@ -75,4 +97,46 @@ func TestCreateClient(t *testing.T) {
 	assert.NotEmpty(t, client.ID)
 	assert.Equal(t, input.FirstName, client.FirstName)
 	assert.Equal(t, input.LastName, client.LastName)
+}
+
+func TestDeleteClient(t *testing.T) {
+	// first create the client
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+
+	input := CreateInput{
+		FirstName: "foo",
+		LastName:  "bar",
+	}
+	client, err := dao.Create(ctx, input)
+	assert.NoError(t, err)
+	assert.NotNil(t, client)
+	assert.NotEmpty(t, client.ID)
+	assert.Equal(t, input.FirstName, client.FirstName)
+	assert.Equal(t, input.LastName, client.LastName)
+
+	// then delete the client
+	err = dao.Delete(ctx, client.ID)
+	assert.NoError(t, err)
+}
+
+func TestAppendImage(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+
+	input := CreateInput{
+		FirstName: "foo",
+		LastName:  "bar",
+	}
+	client, err := dao.Create(ctx, input)
+	assert.NoError(t, err)
+
+	dao.AppendImage(ctx, client.ID, "test1")
+	dao.AppendImage(ctx, client.ID, "test2")
+	dao.AppendImage(ctx, client.ID, "test3")
+
+	client, err = dao.GetClient(ctx, client.ID)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 3, len(client.Images))
 }

@@ -43,7 +43,7 @@ func TestUploadImage(t *testing.T) {
 
 	fsClient, err := firestore.NewClient(ctx, projectID)
 	assert.NoError(t, err)
-	dao := businessdao.NewDao(fsClient, projectID)
+	dao := businessdao.NewDao(fsClient, "businesses")
 	business, err := dao.Create(ctx, businessdao.CreateInput{
 		Name: "foo",
 	})
@@ -95,7 +95,7 @@ func TestGetImages(t *testing.T) {
 
 	fsClient, err := firestore.NewClient(ctx, projectID)
 	assert.NoError(t, err)
-	dao := businessdao.NewDao(fsClient, projectID)
+	dao := businessdao.NewDao(fsClient, "businesses")
 	input := businessdao.CreateInput{
 		Name: "foo",
 	}

@@ -3,6 +3,7 @@ package clientdao
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
@@ -48,6 +49,26 @@ func (dao *Dao) GetClient(ctx context.Context, id string) (*Client, error) {
 	return &client, nil
 }
 
+func (dao *Dao) GetAllClients(ctx context.Context) ([]Client, error) {
+	query := dao.fsClient.Collection(dao.clientCollectionName).Query
+	snapshots, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	clients := make([]Client, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		var client Client
+		if err := snapshot.DataTo(&client); err != nil {
+			return nil, err
+		}
+		client.ID = snapshot.Ref.ID
+		clients = append(clients, client)
+	}
+
+	return clients, nil
+}
+
 type CreateInput struct {
 	FirstName string
 	LastName  string
@@ -67,12 +88,31 @@ func (dao *Dao) Create(ctx context.Context, input CreateInput) (*Client, error) 
 	return &client, nil
 }
 
-// TODO: review this
 func (dao *Dao) Delete(ctx context.Context, id string) error {
 	docRef := dao.fsClient.Collection(dao.clientCollectionName).Doc(id)
 	_, err := docRef.Delete(ctx)
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (dao *Dao) AppendImage(ctx context.Context, id string, key string) error {
+	client, err := dao.GetClient(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("before AppendImage: %+v\n", client)
+	client.Images = append(client.Images, key)
+	fmt.Printf("after AppendImage: %+v\n", client)
+
+	// update client in firestore
+	docRef := dao.fsClient.Collection(dao.clientCollectionName).Doc(id)
+	_, err = docRef.Set(ctx, client)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

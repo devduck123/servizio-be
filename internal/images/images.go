@@ -43,7 +43,7 @@ func (i ImageManager) UploadImage(ctx context.Context, id string, raw []byte) (I
 	if err != nil {
 		return Image{}, err
 	}
-	dao := businessdao.NewDao(fsClient, projectID)
+	dao := businessdao.NewDao(fsClient, "businesses")
 	if err = dao.AppendImage(ctx, id, key); err != nil {
 		return Image{}, err
 	}
@@ -78,7 +78,7 @@ func (i ImageManager) GetImages(ctx context.Context, id string) ([][]byte, error
 	if err != nil {
 		return nil, err
 	}
-	dao := businessdao.NewDao(fsClient, projectID)
+	dao := businessdao.NewDao(fsClient, "businesses")
 	business, err := dao.GetBusiness(ctx, id)
 	if err != nil {
 		return nil, err
