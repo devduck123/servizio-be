@@ -108,14 +108,14 @@ func (dao *Dao) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (dao *Dao) AppendImage(ctx context.Context, id string, imageURL string) error {
+func (dao *Dao) AppendImage(ctx context.Context, id string, key string) error {
 	business, err := dao.GetBusiness(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("before AppendImage: %+v\n", business)
-	business.Images = append(business.Images, imageURL)
+	business.Images = append(business.Images, key)
 	fmt.Printf("after AppendImage: %+v\n", business)
 
 	// update business in firestore

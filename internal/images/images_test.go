@@ -93,22 +93,26 @@ func TestGetImages(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	// we need to create a business,
-	// then give it some images,
-	// then call GetImages(ctx, business.ID)
 	fsClient, err := firestore.NewClient(ctx, projectID)
 	assert.NoError(t, err)
 	dao := businessdao.NewDao(fsClient, projectID)
 	input := businessdao.CreateInput{
-		Name: "foobarbaz",
+		Name: "foo",
 	}
 	business, err := dao.Create(ctx, input)
 	assert.NoError(t, err)
 
-	gotRaws, err := im.GetImages(ctx, business.ID)
+	raw := []byte("hello")
+	_, err = im.UploadImage(ctx, business.ID, raw)
+	assert.NoError(t, err)
+	_, err = im.UploadImage(ctx, business.ID, raw)
 	assert.NoError(t, err)
 
-	fmt.Println(gotRaws)
+	gotRaws, err := im.GetImages(ctx, business.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(gotRaws))
+	assert.Equal(t, raw, gotRaws[0])
+	assert.Equal(t, raw, gotRaws[1])
 }
 
 func TestCreateBucket(t *testing.T) {

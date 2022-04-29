@@ -73,12 +73,6 @@ func (i ImageManager) GetImage(ctx context.Context, key string) ([]byte, error) 
 	return raw, nil
 }
 
-// TODO: convert this to iterate a keys []string
-// 		 and essentially call GetImage() on each ...
-// 		 append those raw byte slices to a slice and return
-//
-// 		 keys[] string comes from the business belonging to
-// 		 `id`
 func (i ImageManager) GetImages(ctx context.Context, id string) ([][]byte, error) {
 	fsClient, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
@@ -90,14 +84,16 @@ func (i ImageManager) GetImages(ctx context.Context, id string) ([][]byte, error
 		return nil, err
 	}
 
-	fmt.Println(business.Images)
-
-	// TODO: call GetImage on all the business.Images
-	// 		 1. parse keys out of business.Images
-	// 		 2. iterate keys, call GetImage on each key
-	// 		 3. add result of call to raws
+	fmt.Println("GetImages called for:", business.Images)
 
 	var raws [][]byte
+	for _, key := range business.Images {
+		raw, err := i.GetImage(ctx, key)
+		if err != nil {
+			return nil, err
+		}
+		raws = append(raws, raw)
+	}
 
 	return raws, nil
 }
