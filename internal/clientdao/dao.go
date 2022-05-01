@@ -3,7 +3,6 @@ package clientdao
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
@@ -98,18 +97,12 @@ func (dao *Dao) Delete(ctx context.Context, id string) error {
 }
 
 func (dao *Dao) AppendImage(ctx context.Context, id string, key string) error {
-	client, err := dao.GetClient(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("before AppendImage: %+v\n", client)
-	client.Images = append(client.Images, key)
-	fmt.Printf("after AppendImage: %+v\n", client)
-
-	// update client in firestore
+	// update business in firestore
 	docRef := dao.fsClient.Collection(dao.clientCollectionName).Doc(id)
-	_, err = docRef.Set(ctx, client)
+	_, err := docRef.Update(ctx, []firestore.Update{{
+		Path:  "images",
+		Value: firestore.ArrayUnion(key),
+	}})
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,6 @@ package businessdao
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
@@ -108,19 +107,14 @@ func (dao *Dao) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// TODO: append FULL URL, not just key (in handler on server)
 func (dao *Dao) AppendImage(ctx context.Context, id string, key string) error {
-	business, err := dao.GetBusiness(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("before AppendImage: %+v\n", business)
-	business.Images = append(business.Images, key)
-	fmt.Printf("after AppendImage: %+v\n", business)
-
 	// update business in firestore
 	docRef := dao.fsClient.Collection(dao.businessCollectionName).Doc(id)
-	_, err = docRef.Set(ctx, business)
+	_, err := docRef.Update(ctx, []firestore.Update{{
+		Path:  "images",
+		Value: firestore.ArrayUnion(key),
+	}})
 	if err != nil {
 		return err
 	}
