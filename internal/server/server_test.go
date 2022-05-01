@@ -14,9 +14,11 @@ import (
 	"testing"
 
 	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go/v4"
 	"github.com/devduck123/servizio-be/internal/authtest"
 	"github.com/devduck123/servizio-be/internal/businessdao"
+	"github.com/devduck123/servizio-be/internal/images"
 	"github.com/google/uuid"
 	"github.com/tj/assert"
 )
@@ -29,6 +31,9 @@ func TestMain(m *testing.M) {
 	}
 	if err := os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099"); err != nil {
 		log.Fatal("failed to set FIREBASE_AUTH_EMULATOR_HOST environment variable", err)
+	}
+	if err := os.Setenv("STORAGE_EMULATOR_HOST", "localhost:9199"); err != nil {
+		log.Fatal("failed to set STORAGE_EMULATOR_HOST environment variable", err)
 	}
 
 	m.Run()
@@ -72,7 +77,7 @@ func deleteCollection(ctx context.Context, t *testing.T, fsClient *firestore.Cli
 func TestCreateBusiness_Invalid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil)
+	server := NewServer(dao, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	body := bytes.NewReader([]byte(`{}`))
@@ -89,7 +94,7 @@ func TestCreateBusiness_Invalid(t *testing.T) {
 func TestCreateBusiness_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil)
+	server := NewServer(dao, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	body := bytes.NewReader([]byte(`{
@@ -112,7 +117,7 @@ func TestCreateBusiness_Valid(t *testing.T) {
 func TestGetBusiness_Invalid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil)
+	server := NewServer(dao, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/businesses/foo", nil)
@@ -129,7 +134,7 @@ func TestGetBusiness_Invalid(t *testing.T) {
 func TestGetBusiness_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil)
+	server := NewServer(dao, nil, nil, nil)
 
 	business, err := dao.Create(ctx, businessdao.CreateInput{
 		Name:     "foo",
@@ -156,7 +161,7 @@ func TestGetBusiness_Valid(t *testing.T) {
 func TestGetAllBusinesses_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil)
+	server := NewServer(dao, nil, nil, nil)
 
 	_, err := dao.Create(ctx, businessdao.CreateInput{
 		Name:     "foo",
@@ -191,7 +196,7 @@ func TestGetAllBusinesses_Valid(t *testing.T) {
 func TestGetAllBusinessesByCategory_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil)
+	server := NewServer(dao, nil, nil, nil)
 
 	_, err := dao.Create(ctx, businessdao.CreateInput{
 		Name:     "foo",
@@ -226,7 +231,7 @@ func TestGetAllBusinessesByCategory_Valid(t *testing.T) {
 func TestGetAllBusinessesByCategory_Invalid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil)
+	server := NewServer(dao, nil, nil, nil)
 
 	_, err := dao.Create(ctx, businessdao.CreateInput{
 		Name:     "foo",
@@ -256,6 +261,50 @@ func TestGetAllBusinessesByCategory_Invalid(t *testing.T) {
 	assert.Equal(t, `{"error":"invalid category"}`, string(raw))
 }
 
+func createTestImageManager(ctx context.Context, t *testing.T) (*images.ImageManager, func()) {
+	client, err := storage.NewClient(ctx)
+	assert.NoError(t, err)
+
+	im := &images.ImageManager{
+		API:        client,
+		BucketName: "servizio-be.appspot.com",
+	}
+
+	cleanUp := func() {
+		client.Close()
+	}
+
+	return im, cleanUp
+}
+
+func TestUploadImage(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+	client, err := storage.NewClient(ctx)
+	assert.NoError(t, err)
+	defer client.Close()
+
+	business, err := dao.Create(ctx, businessdao.CreateInput{
+		Name: "foo",
+	})
+	assert.NoError(t, err)
+
+	im, cleanUp := createTestImageManager(ctx, t)
+	defer cleanUp()
+	server := NewServer(dao, nil, im, nil)
+	body := bytes.NewReader([]byte("hello"))
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/businesses/%v/images/", business.ID), body)
+
+	server.UploadImage(w, r)
+
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+
+	gotBody, err := ioutil.ReadAll(w.Result().Body)
+	assert.NoError(t, err)
+	assert.Equal(t, `"success"`, string(gotBody))
+}
+
 func TestServer(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
@@ -263,7 +312,7 @@ func TestServer(t *testing.T) {
 		ProjectID: projectID,
 	})
 	assert.NoError(t, err)
-	server := NewServer(dao, nil, app) // This is the constructor that creates a "server"
+	server := NewServer(dao, nil, nil, app) // This is the constructor that creates a "server"
 
 	httpServer := httptest.NewServer(http.HandlerFunc(server.BusinessRouter)) // This spins up a HTTP test server.
 	defer httpServer.Close()
@@ -297,8 +346,8 @@ func TestServer_GetBusiness(t *testing.T) {
 		ProjectID: projectID,
 	})
 	assert.NoError(t, err)
-	server := NewServer(dao, nil, app) // This is the constructor that creates a "server"
-	
+	server := NewServer(dao, nil, nil, app) // This is the constructor that creates a "server"
+
 	input := businessdao.CreateInput{
 		Name:     "foo",
 		Category: businessdao.CategoryPets,
@@ -308,7 +357,7 @@ func TestServer_GetBusiness(t *testing.T) {
 
 	httpServer := httptest.NewServer(http.HandlerFunc(server.BusinessRouter)) // This spins up a HTTP test server.
 	defer httpServer.Close()
-	
+
 	req, err := http.NewRequest(http.MethodGet, httpServer.URL+"/businesses/"+business.ID, nil)
 	assert.NoError(t, err)
 
@@ -331,8 +380,8 @@ func TestServer_GetAllBusinesses(t *testing.T) {
 		ProjectID: projectID,
 	})
 	assert.NoError(t, err)
-	server := NewServer(dao, nil, app) // This is the constructor that creates a "server"
-	
+	server := NewServer(dao, nil, nil, app) // This is the constructor that creates a "server"
+
 	input := businessdao.CreateInput{
 		Name:     "foo",
 		Category: businessdao.CategoryPets,
@@ -342,7 +391,7 @@ func TestServer_GetAllBusinesses(t *testing.T) {
 
 	httpServer := httptest.NewServer(http.HandlerFunc(server.BusinessRouter)) // This spins up a HTTP test server.
 	defer httpServer.Close()
-	
+
 	req, err := http.NewRequest(http.MethodGet, httpServer.URL+"/businesses", nil)
 	assert.NoError(t, err)
 

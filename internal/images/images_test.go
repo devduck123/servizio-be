@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"cloud.google.com/go/storage"
-	"github.com/devduck123/servizio-be/internal/businessdao"
-	"github.com/devduck123/servizio-be/internal/firestoretest"
 	"github.com/tj/assert"
 )
 
@@ -30,19 +28,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func createTestDao(ctx context.Context, t *testing.T) *businessdao.Dao {
-	fsClient := firestoretest.CreateTestClient(ctx, t)
-
-	businessCollectionName := "businesses"
-	dao := businessdao.NewDao(fsClient, businessCollectionName)
-
-	t.Cleanup(func() {
-		firestoretest.DeleteCollection(ctx, t, fsClient, businessCollectionName)
-	})
-
-	return dao
-}
-
 func TestUploadImage(t *testing.T) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
@@ -54,23 +39,13 @@ func TestUploadImage(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	dao := createTestDao(ctx, t)
-	business, err := dao.Create(ctx, businessdao.CreateInput{
-		Name: "foo",
-	})
-	assert.NoError(t, err)
-
 	raw := []byte("hello")
-	image, err := im.UploadImage(ctx, business.ID, raw)
+	image, err := im.UploadImage(ctx, "foo", raw)
 	assert.NoError(t, err)
-
-	gotBusiness, err := dao.GetBusiness(ctx, business.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(gotBusiness.Images))
 
 	fmt.Println("image key:", image.Key)
 
-	gotRaw, err := im.GetImage(ctx, image.Key)
+	gotRaw, err := im.GetImage(ctx, "foo", image.Key)
 	assert.NoError(t, err)
 	assert.Equal(t, raw, gotRaw)
 }
@@ -86,42 +61,11 @@ func TestGetImage_Exists(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	gotRaw, err := im.GetImage(ctx, "9520f5d1-6fe8-4d18-8546-9909bbbbe22d")
+	gotRaw, err := im.GetImage(ctx, "foo", "9520f5d1-6fe8-4d18-8546-9909bbbbe22d")
 	assert.NoError(t, err)
 
 	assert.Equal(t, []byte("hello"), gotRaw)
 	fmt.Println(string(gotRaw))
-}
-
-func TestGetImages(t *testing.T) {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	assert.NoError(t, err)
-	defer client.Close()
-
-	im := ImageManager{
-		API:        client,
-		BucketName: "servizio-be.appspot.com",
-	}
-
-	dao := createTestDao(ctx, t)
-	input := businessdao.CreateInput{
-		Name: "foo",
-	}
-	business, err := dao.Create(ctx, input)
-	assert.NoError(t, err)
-
-	raw := []byte("hello")
-	_, err = im.UploadImage(ctx, business.ID, raw)
-	assert.NoError(t, err)
-	_, err = im.UploadImage(ctx, business.ID, raw)
-	assert.NoError(t, err)
-
-	gotRaws, err := im.GetImages(ctx, business.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(gotRaws))
-	assert.Equal(t, raw, gotRaws[0])
-	assert.Equal(t, raw, gotRaws[1])
 }
 
 func TestCreateBucket(t *testing.T) {
@@ -135,7 +79,7 @@ func TestCreateBucket(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	result, err := im.CreateBucket(ctx, "servizio-be.appspot.com/world")
+	result, err := im.createBucket(ctx, "servizio-be.appspot.com/world")
 	assert.NoError(t, err)
 
 	fmt.Println(result)
@@ -152,7 +96,7 @@ func TestDeleteBucket(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	result, err := im.DeleteBucket(ctx, "servizio-be.appspot.com/hello")
+	result, err := im.deleteBucket(ctx, "servizio-be.appspot.com/hello")
 	assert.NoError(t, err)
 
 	fmt.Println(result)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -12,17 +13,22 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"github.com/devduck123/servizio-be/internal/businessdao"
 	"github.com/devduck123/servizio-be/internal/clientdao"
+	"github.com/devduck123/servizio-be/internal/images"
 )
 
 type Server struct {
-	businessDao *businessdao.Dao
-	app         *firebase.App
+	businessDao  *businessdao.Dao
+	clientDao    *clientdao.Dao
+	imageManager *images.ImageManager
+	app          *firebase.App
 }
 
-func NewServer(businessDao *businessdao.Dao, clientDao *clientdao.Dao, app *firebase.App) *Server {
+func NewServer(businessDao *businessdao.Dao, clientDao *clientdao.Dao, imageManager *images.ImageManager, app *firebase.App) *Server {
 	return &Server{
-		businessDao: businessDao,
-		app:         app,
+		businessDao:  businessDao,
+		clientDao:    clientDao,
+		imageManager: imageManager,
+		app:          app,
 	}
 }
 
@@ -114,6 +120,11 @@ func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 		s.GetBusiness(w, r)
 		return
 	case http.MethodPost:
+		trimmedURL := strings.TrimSuffix(r.URL.Path, "/")
+		if strings.HasSuffix(trimmedURL, "/images") {
+			s.Authenticate(s.UploadImage)(w, r)
+			return
+		}
 		s.Authenticate(s.CreateBusiness)(w, r)
 		return
 	case http.MethodDelete:
@@ -126,9 +137,9 @@ func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("GetBusiness called on:", r.URL.Path)
-	
+
 	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
-	
+
 	business, err := s.businessDao.GetBusiness(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, businessdao.ErrBusinessNotFound) {
@@ -225,6 +236,54 @@ func (s *Server) DeleteBusiness(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, "successful deletion")
+}
+
+// TODO: fix images package
+// 
+// TODO: file size limit, file type limit, consider form api
+func (s *Server) UploadImage(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	fmt.Println(r.URL.Path)
+
+	trimmedURL := strings.TrimSuffix(r.URL.Path, "/")
+	id := strings.TrimSuffix(strings.TrimPrefix(trimmedURL, "/businesses/"), "/images")
+
+	fmt.Println("id:", id)
+	_, err := s.businessDao.GetBusiness(ctx, id)
+	if err != nil {
+		if err == businessdao.ErrBusinessNotFound {
+			writeErrorJSON(w, http.StatusNotFound, err)
+			return
+		}
+
+		writeErrorJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	raw, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		writeErrorJSON(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if len(raw) == 0 {
+		writeErrorJSON(w, http.StatusBadRequest, errors.New("no image provided"))
+		return
+	}
+
+	image, err := s.imageManager.UploadImage(ctx, id, raw)
+	if err != nil {
+		writeErrorJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+	key := image.Key
+
+	if err := s.businessDao.AppendImage(ctx, id, key); err != nil {
+		writeErrorJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, "success")
 }
 
 func writeErrorJSON(w http.ResponseWriter, status int, err error) {
