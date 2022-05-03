@@ -77,7 +77,7 @@ func deleteCollection(ctx context.Context, t *testing.T, fsClient *firestore.Cli
 func TestCreateBusiness_Invalid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil, nil)
+	server := NewServer(dao, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	body := bytes.NewReader([]byte(`{}`))
@@ -94,7 +94,7 @@ func TestCreateBusiness_Invalid(t *testing.T) {
 func TestCreateBusiness_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil, nil)
+	server := NewServer(dao, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	body := bytes.NewReader([]byte(`{
@@ -117,7 +117,7 @@ func TestCreateBusiness_Valid(t *testing.T) {
 func TestGetBusiness_Invalid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil, nil)
+	server := NewServer(dao, nil, nil, nil, nil)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/businesses/foo", nil)
@@ -134,7 +134,7 @@ func TestGetBusiness_Invalid(t *testing.T) {
 func TestGetBusiness_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil, nil)
+	server := NewServer(dao, nil, nil, nil, nil)
 
 	business, err := dao.Create(ctx, businessdao.CreateInput{
 		Name:     "foo",
@@ -161,7 +161,7 @@ func TestGetBusiness_Valid(t *testing.T) {
 func TestGetAllBusinesses_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil, nil)
+	server := NewServer(dao, nil, nil, nil, nil)
 
 	_, err := dao.Create(ctx, businessdao.CreateInput{
 		Name:     "foo",
@@ -196,7 +196,7 @@ func TestGetAllBusinesses_Valid(t *testing.T) {
 func TestGetAllBusinessesByCategory_Valid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil, nil)
+	server := NewServer(dao, nil, nil, nil, nil)
 
 	_, err := dao.Create(ctx, businessdao.CreateInput{
 		Name:     "foo",
@@ -231,7 +231,7 @@ func TestGetAllBusinessesByCategory_Valid(t *testing.T) {
 func TestGetAllBusinessesByCategory_Invalid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
-	server := NewServer(dao, nil, nil, nil)
+	server := NewServer(dao, nil, nil, nil, nil)
 
 	_, err := dao.Create(ctx, businessdao.CreateInput{
 		Name:     "foo",
@@ -291,12 +291,12 @@ func TestUploadImage(t *testing.T) {
 
 	im, cleanUp := createTestImageManager(ctx, t)
 	defer cleanUp()
-	server := NewServer(dao, nil, im, nil)
+	server := NewServer(dao, nil, nil, im, nil)
 	body := bytes.NewReader([]byte("hello"))
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/businesses/%v/images/", business.ID), body)
 
-	server.UploadImage(w, r)
+	server.UploadImageBusiness(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
@@ -312,7 +312,7 @@ func TestServer(t *testing.T) {
 		ProjectID: projectID,
 	})
 	assert.NoError(t, err)
-	server := NewServer(dao, nil, nil, app) // This is the constructor that creates a "server"
+	server := NewServer(dao, nil, nil, nil, app) // This is the constructor that creates a "server"
 
 	httpServer := httptest.NewServer(http.HandlerFunc(server.BusinessRouter)) // This spins up a HTTP test server.
 	defer httpServer.Close()
@@ -346,7 +346,7 @@ func TestServer_GetBusiness(t *testing.T) {
 		ProjectID: projectID,
 	})
 	assert.NoError(t, err)
-	server := NewServer(dao, nil, nil, app) // This is the constructor that creates a "server"
+	server := NewServer(dao, nil, nil, nil, app) // This is the constructor that creates a "server"
 
 	input := businessdao.CreateInput{
 		Name:     "foo",
@@ -380,7 +380,7 @@ func TestServer_GetAllBusinesses(t *testing.T) {
 		ProjectID: projectID,
 	})
 	assert.NoError(t, err)
-	server := NewServer(dao, nil, nil, app) // This is the constructor that creates a "server"
+	server := NewServer(dao, nil, nil, nil, app) // This is the constructor that creates a "server"
 
 	input := businessdao.CreateInput{
 		Name:     "foo",
@@ -420,5 +420,4 @@ func TestUserFromContext_Found(t *testing.T) {
 	gotUser, err := UserFromContext(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, user.ID, gotUser.ID)
-
 }

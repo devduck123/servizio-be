@@ -71,6 +71,7 @@ func (dao *Dao) GetAllClients(ctx context.Context) ([]Client, error) {
 type CreateInput struct {
 	FirstName string
 	LastName  string
+	UserID    string
 }
 
 func (dao *Dao) Create(ctx context.Context, input CreateInput) (*Client, error) {

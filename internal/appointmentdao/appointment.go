@@ -53,6 +53,8 @@ type GetAllAppointmentsInput struct {
 	ClientID string
 }
 
+// TODO: maybe convert this from query parameter to
+// 		 URL path (/appointments/{id})
 func (dao *Dao) GetAllAppointments(ctx context.Context, input GetAllAppointmentsInput) ([]Appointment, error) {
 	query := dao.fsClient.Collection(dao.appointmentCollectionName).Query
 	if input.ClientID != "" {
