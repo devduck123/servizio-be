@@ -66,16 +66,16 @@ func TestGetAllAppointments_ByClientID(t *testing.T) {
 	dao := createTestDao(ctx, t)
 
 	createInput := CreateInput{
-		ClientID:   "foo",
-		BusinessID: "bar",
+		ClientID:   "client1",
+		BusinessID: "google",
 	}
 	createInput2 := CreateInput{
-		ClientID:   "foo",
-		BusinessID: "baz",
+		ClientID:   "client2",
+		BusinessID: "google",
 	}
 	createInput3 := CreateInput{
-		ClientID:   "doug",
-		BusinessID: "jenna",
+		ClientID:   "client3",
+		BusinessID: "apple",
 	}
 	_, err := dao.Create(ctx, createInput)
 	assert.NoError(t, err)
@@ -85,7 +85,7 @@ func TestGetAllAppointments_ByClientID(t *testing.T) {
 	assert.NoError(t, err)
 
 	getAllAppointmentsInput := GetAllAppointmentsInput{
-		ClientID: "foo",
+		BusinessID: "google",
 	}
 	allAppointments, err := dao.GetAllAppointments(ctx, getAllAppointmentsInput)
 	assert.NoError(t, err)
@@ -98,22 +98,28 @@ func TestGetAllAppointments(t *testing.T) {
 	dao := createTestDao(ctx, t)
 
 	createInput := CreateInput{
-		ClientID:   "foo",
-		BusinessID: "bar",
+		ClientID:   "client1",
+		BusinessID: "google",
 	}
 	createInput2 := CreateInput{
-		ClientID:   "doug",
-		BusinessID: "jenna",
+		ClientID:   "client2",
+		BusinessID: "google",
+	}
+	createInput3 := CreateInput{
+		ClientID:   "client3",
+		BusinessID: "apple",
 	}
 	_, err := dao.Create(ctx, createInput)
 	assert.NoError(t, err)
 	_, err = dao.Create(ctx, createInput2)
 	assert.NoError(t, err)
+	_, err = dao.Create(ctx, createInput3)
+	assert.NoError(t, err)
 
 	getAllAppointmentsInput := GetAllAppointmentsInput{}
 	allAppointments, err := dao.GetAllAppointments(ctx, getAllAppointmentsInput)
 	assert.NoError(t, err)
-	assert.Len(t, allAppointments, 2)
+	assert.Len(t, allAppointments, 3)
 }
 
 func TestCreateAppointment(t *testing.T) {

@@ -50,15 +50,14 @@ func (dao *Dao) GetAppointment(ctx context.Context, id string) (*Appointment, er
 }
 
 type GetAllAppointmentsInput struct {
-	ClientID string
+	// OPTIONAL to filter by businesses
+	BusinessID string
 }
 
-// TODO: maybe convert this from query parameter to
-// 		 URL path (/appointments/{id})
 func (dao *Dao) GetAllAppointments(ctx context.Context, input GetAllAppointmentsInput) ([]Appointment, error) {
 	query := dao.fsClient.Collection(dao.appointmentCollectionName).Query
-	if input.ClientID != "" {
-		query = query.Where("clientId", "==", input.ClientID)
+	if input.BusinessID != "" {
+		query = query.Where("businessId", "==", input.BusinessID)
 	}
 	snapshots, err := query.Documents(ctx).GetAll()
 	if err != nil {
