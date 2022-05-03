@@ -182,13 +182,14 @@ type BusinessCreateInput struct {
 }
 
 func (s *Server) CreateBusiness(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("CreateBusiness called on :", r.URL.Path)
+
 	user, err := UserFromContext(r.Context())
 	if err != nil {
 		writeErrorJSON(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	fmt.Println(r.URL.Path)
 	var businessCreateInput BusinessCreateInput
 	err = json.NewDecoder(r.Body).Decode(&businessCreateInput)
 	if err != nil {
@@ -221,7 +222,7 @@ func (s *Server) CreateBusiness(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) DeleteBusiness(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
+	fmt.Println("DeleteBusiness called on:", r.URL.Path)
 
 	id := strings.TrimPrefix(r.URL.Path, "/businesses/")
 	err := s.businessDao.Delete(r.Context(), id)
@@ -238,12 +239,12 @@ func (s *Server) DeleteBusiness(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, "successful deletion")
 }
 
-// TODO: fix images package
-// 
 // TODO: file size limit, file type limit, consider form api
+// TODO: review imageURL
 func (s *Server) UploadImage(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("UploadImage called on:", r.URL.Path)
+
 	ctx := r.Context()
-	fmt.Println(r.URL.Path)
 
 	trimmedURL := strings.TrimSuffix(r.URL.Path, "/")
 	id := strings.TrimSuffix(strings.TrimPrefix(trimmedURL, "/businesses/"), "/images")
@@ -276,9 +277,9 @@ func (s *Server) UploadImage(w http.ResponseWriter, r *http.Request) {
 		writeErrorJSON(w, http.StatusInternalServerError, err)
 		return
 	}
-	key := image.Key
 
-	if err := s.businessDao.AppendImage(ctx, id, key); err != nil {
+	imageURL := fmt.Sprintf("servizio-be.appspot.com/%v/%v", id, image.Key)
+	if err := s.businessDao.AppendImage(ctx, id, imageURL); err != nil {
 		writeErrorJSON(w, http.StatusInternalServerError, err)
 		return
 	}

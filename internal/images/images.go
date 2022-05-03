@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var projectID = "servizio-be"
+// var projectID = "servizio-be"
 
 type Image struct {
 	SignedURL string
@@ -63,23 +63,24 @@ func (i ImageManager) GetImage(ctx context.Context, id string, key string) ([]by
 	return raw, nil
 }
 
-func (i ImageManager) createBucket(ctx context.Context, bucketName string) (string, error) {
-	bucket := i.API.Bucket(bucketName)
-	err := bucket.Create(ctx, projectID, nil)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("created bucket: %s", bucketName), nil
-}
+// TODO: review this code to check if useful...
+// func (i ImageManager) createBucket(ctx context.Context, bucketName string) (string, error) {
+// 	bucket := i.API.Bucket(bucketName)
+// 	err := bucket.Create(ctx, projectID, nil)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return fmt.Sprintf("created bucket: %s", bucketName), nil
+// }
 
-func (i ImageManager) deleteBucket(ctx context.Context, bucketName string) (string, error) {
-	bucketToDelete := i.API.Bucket(bucketName)
-	err := bucketToDelete.Delete(ctx)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("successfully deleted bucket %s", bucketName), nil
-}
+// func (i ImageManager) deleteBucket(ctx context.Context, bucketName string) (string, error) {
+// 	bucketToDelete := i.API.Bucket(bucketName)
+// 	err := bucketToDelete.Delete(ctx)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return fmt.Sprintf("successfully deleted bucket %s", bucketName), nil
+// }
 
 func (i ImageManager) GetSignedURL(ctx context.Context) (Image, error) {
 	key := uuid.New().String()

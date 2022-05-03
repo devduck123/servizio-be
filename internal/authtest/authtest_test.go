@@ -32,3 +32,13 @@ func TestGetJWT(t *testing.T) {
 
 	fmt.Println("token:", token)
 }
+
+// use this test for creating a JWT locally
+func TestCreateJWT(t *testing.T) {
+	t.SkipNow()
+
+	token, err := GetJWT(t, "servizio-be")
+	assert.NoError(t, err)
+
+	fmt.Println("token:", token)
+}

@@ -107,13 +107,12 @@ func (dao *Dao) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// TODO: append FULL URL, not just key (in handler on server)
-func (dao *Dao) AppendImage(ctx context.Context, id string, key string) error {
+func (dao *Dao) AppendImage(ctx context.Context, id string, imageURL string) error {
 	// update business in firestore
 	docRef := dao.fsClient.Collection(dao.businessCollectionName).Doc(id)
 	_, err := docRef.Update(ctx, []firestore.Update{{
 		Path:  "images",
-		Value: firestore.ArrayUnion(key),
+		Value: firestore.ArrayUnion(imageURL),
 	}})
 	if err != nil {
 		return err

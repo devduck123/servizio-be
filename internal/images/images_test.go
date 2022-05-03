@@ -61,43 +61,44 @@ func TestGetImage_Exists(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	gotRaw, err := im.GetImage(ctx, "foo", "9520f5d1-6fe8-4d18-8546-9909bbbbe22d")
+	gotRaw, err := im.GetImage(ctx, "foo", "39afdab7-1ef8-4e4e-be9b-b8254cb45c69")
 	assert.NoError(t, err)
 
 	assert.Equal(t, []byte("hello"), gotRaw)
 	fmt.Println(string(gotRaw))
 }
 
-func TestCreateBucket(t *testing.T) {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	assert.NoError(t, err)
-	defer client.Close()
+// TODO: review this code to check if useful...
+// func TestCreateBucket(t *testing.T) {
+// 	ctx := context.Background()
+// 	client, err := storage.NewClient(ctx)
+// 	assert.NoError(t, err)
+// 	defer client.Close()
 
-	im := ImageManager{
-		API:        client,
-		BucketName: "servizio-be.appspot.com",
-	}
+// 	im := ImageManager{
+// 		API:        client,
+// 		BucketName: "servizio-be.appspot.com",
+// 	}
 
-	result, err := im.createBucket(ctx, "servizio-be.appspot.com/world")
-	assert.NoError(t, err)
+// 	result, err := im.createBucket(ctx, "servizio-be.appspot.com/world")
+// 	assert.NoError(t, err)
 
-	fmt.Println(result)
-}
+// 	fmt.Println(result)
+// }
 
-func TestDeleteBucket(t *testing.T) {
-	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	assert.NoError(t, err)
-	defer client.Close()
+// func TestDeleteBucket(t *testing.T) {
+// 	ctx := context.Background()
+// 	client, err := storage.NewClient(ctx)
+// 	assert.NoError(t, err)
+// 	defer client.Close()
 
-	im := ImageManager{
-		API:        client,
-		BucketName: "servizio-be.appspot.com",
-	}
+// 	im := ImageManager{
+// 		API:        client,
+// 		BucketName: "servizio-be.appspot.com",
+// 	}
 
-	result, err := im.deleteBucket(ctx, "servizio-be.appspot.com/hello")
-	assert.NoError(t, err)
+// 	result, err := im.deleteBucket(ctx, "servizio-be.appspot.com/hello")
+// 	assert.NoError(t, err)
 
-	fmt.Println(result)
-}
+// 	fmt.Println(result)
+// }

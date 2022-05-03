@@ -97,7 +97,7 @@ func (dao *Dao) Delete(ctx context.Context, id string) error {
 }
 
 func (dao *Dao) AppendImage(ctx context.Context, id string, key string) error {
-	// update business in firestore
+	// update client in firestore
 	docRef := dao.fsClient.Collection(dao.clientCollectionName).Doc(id)
 	_, err := docRef.Update(ctx, []firestore.Update{{
 		Path:  "images",
