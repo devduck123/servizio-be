@@ -75,7 +75,7 @@ func run(ctx context.Context) error {
 	s := server.NewServer(businessDao, clientDao, appointmentDao, im, app)
 	http.HandleFunc("/businesses/", s.Logger(s.BusinessRouter))
 	http.HandleFunc("/clients/", s.Logger(s.ClientRouter))
-	// http.HandleFunc("/appointments/", s.Logger(s.BusinessRouter))
+	http.HandleFunc("/appointments/", s.Logger(s.AppointmentRouter))
 	fmt.Println("listening on port 3000")
 	if err := http.ListenAndServe(":3000", nil); err != nil {
 		return err

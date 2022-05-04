@@ -52,12 +52,16 @@ func (dao *Dao) GetAppointment(ctx context.Context, id string) (*Appointment, er
 type GetAllAppointmentsInput struct {
 	// OPTIONAL to filter by businesses
 	BusinessID string
+	ClientID   string
 }
 
 func (dao *Dao) GetAllAppointments(ctx context.Context, input GetAllAppointmentsInput) ([]Appointment, error) {
 	query := dao.fsClient.Collection(dao.appointmentCollectionName).Query
 	if input.BusinessID != "" {
 		query = query.Where("businessId", "==", input.BusinessID)
+	}
+	if input.ClientID != "" {
+		query = query.Where("clientId", "==", input.ClientID)
 	}
 	snapshots, err := query.Documents(ctx).GetAll()
 	if err != nil {
@@ -77,6 +81,7 @@ func (dao *Dao) GetAllAppointments(ctx context.Context, input GetAllAppointments
 	return appointments, nil
 }
 
+// TODO: give it a time field
 type CreateInput struct {
 	ClientID   string
 	BusinessID string

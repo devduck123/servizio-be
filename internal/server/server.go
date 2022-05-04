@@ -163,6 +163,28 @@ func (s *Server) ClientRouter(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) AppointmentRouter(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		appointmentID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/appointments"), "/")
+		fmt.Println("id:", appointmentID)
+		if appointmentID == "" {
+			s.GetAllAppointments(w, r)
+			return
+		}
+		s.GetAppointment(w, r)
+		return
+	case http.MethodPost:
+		s.Authenticate(s.CreateAppointment)(w, r)
+		return
+	case http.MethodDelete:
+		s.Authenticate(s.DeleteAppointment)(w, r)
+		return
+	default:
+		writeErrorJSON(w, http.StatusNotImplemented, fmt.Errorf("%v not implemented yet", r.Method))
+	}
+}
+
 func writeErrorJSON(w http.ResponseWriter, status int, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
