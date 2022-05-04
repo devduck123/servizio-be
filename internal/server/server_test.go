@@ -74,6 +74,8 @@ func deleteCollection(ctx context.Context, t *testing.T, fsClient *firestore.Cli
 	}
 }
 
+// TODO: move handler tests into their own files
+
 func TestCreateBusiness_Invalid(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/devduck123/servizio-be/internal/appointmentdao"
 )
@@ -55,8 +56,9 @@ func (s *Server) GetAllAppointments(w http.ResponseWriter, r *http.Request) {
 
 // TODO: give it a time field
 type AppointmentCreateInput struct {
-	ClientID   string `json:"clientId"`
-	BusinessID string `json:"businessId"`
+	ClientID   string    `json:"clientId"`
+	BusinessID string    `json:"businessId"`
+	Date       time.Time `json:"date"`
 }
 
 func (s *Server) CreateAppointment(w http.ResponseWriter, r *http.Request) {
@@ -81,15 +83,19 @@ func (s *Server) CreateAppointment(w http.ResponseWriter, r *http.Request) {
 		writeErrorJSON(w, http.StatusBadRequest, errors.New("clientID cannot be empty"))
 		return
 	}
-
 	if strings.TrimSpace(appointmentCreateInput.BusinessID) == "" {
 		writeErrorJSON(w, http.StatusBadRequest, errors.New("businessID cannot be empty"))
+		return
+	}
+	if appointmentCreateInput.Date.Before(time.Now()) {
+		writeErrorJSON(w, http.StatusBadRequest, errors.New("date invalid"))
 		return
 	}
 
 	appointmentToCreateInput := appointmentdao.CreateInput{
 		ClientID:   appointmentCreateInput.ClientID,
 		BusinessID: appointmentCreateInput.BusinessID,
+		Date:       appointmentCreateInput.Date,
 	}
 	appointment, err := s.appointmentDao.Create(r.Context(), appointmentToCreateInput)
 	if err != nil {

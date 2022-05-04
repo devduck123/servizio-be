@@ -81,16 +81,17 @@ func (dao *Dao) GetAllAppointments(ctx context.Context, input GetAllAppointments
 	return appointments, nil
 }
 
-// TODO: give it a time field
 type CreateInput struct {
 	ClientID   string
 	BusinessID string
+	Date       time.Time
 }
 
 func (dao *Dao) Create(ctx context.Context, input CreateInput) (*Appointment, error) {
 	appointment := Appointment{
 		ClientID:   input.ClientID,
 		BusinessID: input.BusinessID,
+		Date:       input.Date,
 	}
 
 	doc, _, err := dao.fsClient.Collection(dao.appointmentCollectionName).Add(ctx, appointment)

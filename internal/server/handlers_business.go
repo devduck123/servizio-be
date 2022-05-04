@@ -33,7 +33,7 @@ func (s *Server) GetBusiness(w http.ResponseWriter, r *http.Request) {
 func (s *Server) GetAllBusinesses(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("GetAllBusinesses called on:", r.URL.Path, "on", r.URL.RawQuery)
 
-	category := strings.TrimPrefix(r.URL.RawQuery, "category=")
+	category := r.URL.Query().Get("category")
 	input := businessdao.GetAllBusinessesInput{
 		Category: businessdao.Category(category),
 	}

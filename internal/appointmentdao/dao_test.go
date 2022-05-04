@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/devduck123/servizio-be/internal/firestoretest"
 	"github.com/google/uuid"
@@ -126,9 +127,12 @@ func TestCreateAppointment(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
 
+	inputTime, err := time.Parse("2006-01-02 15:04", "2023-04-20 04:35")
+	assert.NoError(t, err)
 	input := CreateInput{
 		ClientID:   "foo",
 		BusinessID: "bar",
+		Date:       inputTime,
 	}
 	appointment, err := dao.Create(ctx, input)
 	assert.NoError(t, err)
@@ -136,6 +140,7 @@ func TestCreateAppointment(t *testing.T) {
 	assert.NotEmpty(t, appointment.ID)
 	assert.Equal(t, input.ClientID, appointment.ClientID)
 	assert.Equal(t, input.BusinessID, appointment.BusinessID)
+	assert.Equal(t, input.Date, appointment.Date)
 }
 
 func TestDeleteAppointment(t *testing.T) {
