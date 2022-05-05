@@ -54,7 +54,6 @@ func (s *Server) GetAllAppointments(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, allAppointments)
 }
 
-// TODO: give it a time field
 type AppointmentCreateInput struct {
 	ClientID   string    `json:"clientId"`
 	BusinessID string    `json:"businessId"`

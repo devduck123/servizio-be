@@ -62,7 +62,7 @@ func TestGetAppointment_NotExists(t *testing.T) {
 	assert.Nil(t, gotAppointment)
 }
 
-func TestGetAllAppointments_ByClientID(t *testing.T) {
+func TestGetAllAppointments_ByClientID_ByBusinessID(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
 
@@ -71,11 +71,11 @@ func TestGetAllAppointments_ByClientID(t *testing.T) {
 		BusinessID: "google",
 	}
 	createInput2 := CreateInput{
-		ClientID:   "client2",
-		BusinessID: "google",
+		ClientID:   "client1",
+		BusinessID: "apple",
 	}
 	createInput3 := CreateInput{
-		ClientID:   "client3",
+		ClientID:   "client1",
 		BusinessID: "apple",
 	}
 	_, err := dao.Create(ctx, createInput)
@@ -86,7 +86,39 @@ func TestGetAllAppointments_ByClientID(t *testing.T) {
 	assert.NoError(t, err)
 
 	getAllAppointmentsInput := GetAllAppointmentsInput{
+		ClientID:   "client1",
+		BusinessID: "apple",
+	}
+	allAppointments, err := dao.GetAllAppointments(ctx, getAllAppointmentsInput)
+	assert.NoError(t, err)
+	assert.Len(t, allAppointments, 2)
+}
+
+func TestGetAllAppointments_ByClientID(t *testing.T) {
+	ctx := context.Background()
+	dao := createTestDao(ctx, t)
+
+	createInput := CreateInput{
+		ClientID:   "client1",
 		BusinessID: "google",
+	}
+	createInput2 := CreateInput{
+		ClientID:   "client1",
+		BusinessID: "apple",
+	}
+	createInput3 := CreateInput{
+		ClientID:   "client2",
+		BusinessID: "apple",
+	}
+	_, err := dao.Create(ctx, createInput)
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, createInput2)
+	assert.NoError(t, err)
+	_, err = dao.Create(ctx, createInput3)
+	assert.NoError(t, err)
+
+	getAllAppointmentsInput := GetAllAppointmentsInput{
+		ClientID: "client1",
 	}
 	allAppointments, err := dao.GetAllAppointments(ctx, getAllAppointmentsInput)
 	assert.NoError(t, err)
@@ -144,7 +176,6 @@ func TestCreateAppointment(t *testing.T) {
 }
 
 func TestDeleteAppointment(t *testing.T) {
-	// first create the appointment
 	ctx := context.Background()
 	dao := createTestDao(ctx, t)
 
@@ -159,7 +190,6 @@ func TestDeleteAppointment(t *testing.T) {
 	assert.Equal(t, input.ClientID, appointment.ClientID)
 	assert.Equal(t, input.BusinessID, appointment.BusinessID)
 
-	// then delete the appointment
 	err = dao.Delete(ctx, appointment.ID)
 	assert.NoError(t, err)
 }

@@ -65,8 +65,12 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("%+v\n", clientCreateInput)
 
-	if strings.TrimSpace(clientCreateInput.FirstName) == "" || strings.TrimSpace(clientCreateInput.LastName) == "" {
-		writeErrorJSON(w, http.StatusBadRequest, errors.New("name cannot be empty"))
+	if strings.TrimSpace(clientCreateInput.FirstName) == "" {
+		writeErrorJSON(w, http.StatusBadRequest, errors.New("first name cannot be empty"))
+		return
+	}
+	if strings.TrimSpace(clientCreateInput.LastName) == "" {
+		writeErrorJSON(w, http.StatusBadRequest, errors.New("last name cannot be empty"))
 		return
 	}
 
