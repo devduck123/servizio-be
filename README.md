@@ -6,12 +6,12 @@ firebase emulators:start
 
 # How to run locally
 ```
-go run . -local
+go run ./cmd/server -local
 ```
 
 # How to run
 ```
-go run .
+go run ./cmd/server
 ```
 
 # How to test
