@@ -4,7 +4,7 @@ type Category string
 
 var (
 	CategoryPets       Category = "pets"
-	CategoryAutomotive Category = "automotive"
+	CategoryAutomotive Category = "auto"
 	CategoryEvents     Category = "events"
 	CategoryBeauty     Category = "beauty"
 	CategoryHome       Category = "home"
