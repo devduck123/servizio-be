@@ -110,6 +110,16 @@ func (s *Server) Logger(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func (s *Server) CORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "*")
+
+		next(w, r)
+	}
+}
+
 func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:

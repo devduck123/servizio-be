@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// var projectID = "servizio-be"
+var projectID = "servizio-be"
 
 type Image struct {
 	SignedURL string
@@ -27,6 +27,10 @@ func (i ImageManager) UploadImage(ctx context.Context, id string, raw []byte) (I
 
 	bucketName := fmt.Sprintf("%v/%v", i.BucketName, id)
 	bucket := i.API.Bucket(bucketName)
+	// TODO: look into this panic!!!
+	// if err := bucket.Create(ctx, projectID, nil); err != nil {
+	// 	return Image{}, err
+	// }
 	object := bucket.Object(key)
 	w := object.NewWriter(ctx)
 	_, err := w.Write(raw)

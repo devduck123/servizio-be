@@ -47,9 +47,9 @@ func setupServer() (http.Handler, error) {
 	s := server.NewServer(businessDao, clientDao, appointmentDao, im, app)
 
 	sm := http.NewServeMux()
-	sm.Handle("/businesses/", s.Logger(s.BusinessRouter))
-	sm.Handle("/clients/", s.Logger(s.ClientRouter))
-	sm.Handle("/appointments/", s.Logger(s.AppointmentRouter))
+	sm.Handle("/businesses/", s.Logger(s.CORS(s.BusinessRouter)))
+	sm.Handle("/clients/", s.Logger(s.CORS(s.ClientRouter)))
+	sm.Handle("/appointments/", s.Logger(s.CORS(s.AppointmentRouter)))
 
 	return sm, nil
 }
