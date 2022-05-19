@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"cloud.google.com/go/storage"
 	"github.com/tj/assert"
 )
 
@@ -30,12 +29,8 @@ func TestMain(m *testing.M) {
 
 func TestUploadImage(t *testing.T) {
 	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	assert.NoError(t, err)
-	defer client.Close()
 
 	im := ImageManager{
-		API:        client,
 		BucketName: "servizio-be.appspot.com",
 	}
 
@@ -54,12 +49,8 @@ func TestGetImage_Exists(t *testing.T) {
 	t.SkipNow()
 
 	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	assert.NoError(t, err)
-	defer client.Close()
 
 	im := ImageManager{
-		API:        client,
 		BucketName: "servizio-be.appspot.com",
 	}
 
@@ -69,38 +60,3 @@ func TestGetImage_Exists(t *testing.T) {
 	assert.Equal(t, []byte("hello"), gotRaw)
 	fmt.Println(string(gotRaw))
 }
-
-// TODO: review this code to check if useful...
-// func TestCreateBucket(t *testing.T) {
-// 	ctx := context.Background()
-// 	client, err := storage.NewClient(ctx)
-// 	assert.NoError(t, err)
-// 	defer client.Close()
-
-// 	im := ImageManager{
-// 		API:        client,
-// 		BucketName: "servizio-be.appspot.com",
-// 	}
-
-// 	result, err := im.createBucket(ctx, "servizio-be.appspot.com/world")
-// 	assert.NoError(t, err)
-
-// 	fmt.Println(result)
-// }
-
-// func TestDeleteBucket(t *testing.T) {
-// 	ctx := context.Background()
-// 	client, err := storage.NewClient(ctx)
-// 	assert.NoError(t, err)
-// 	defer client.Close()
-
-// 	im := ImageManager{
-// 		API:        client,
-// 		BucketName: "servizio-be.appspot.com",
-// 	}
-
-// 	result, err := im.deleteBucket(ctx, "servizio-be.appspot.com/hello")
-// 	assert.NoError(t, err)
-
-// 	fmt.Println(result)
-// }

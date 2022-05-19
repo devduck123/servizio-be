@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"cloud.google.com/go/firestore"
-	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go/v4"
 	"github.com/devduck123/servizio-be/internal/authtest"
 	"github.com/devduck123/servizio-be/internal/businessdao"
@@ -47,36 +46,24 @@ func deleteCollection(ctx context.Context, t *testing.T, fsClient *firestore.Cli
 	}
 }
 
-func createTestImageManager(ctx context.Context, t *testing.T) (*images.ImageManager, func()) {
-	client, err := storage.NewClient(ctx)
-	assert.NoError(t, err)
-
+func createTestImageManager(ctx context.Context, t *testing.T) *images.ImageManager {
 	im := &images.ImageManager{
-		API:        client,
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	cleanUp := func() {
-		client.Close()
-	}
-
-	return im, cleanUp
+	return im
 }
 
 func TestUploadImage(t *testing.T) {
 	ctx := context.Background()
 	dao := createTestBusinessDao(ctx, t)
-	client, err := storage.NewClient(ctx)
-	assert.NoError(t, err)
-	defer client.Close()
 
 	business, err := dao.Create(ctx, businessdao.CreateInput{
 		Name: "foo",
 	})
 	assert.NoError(t, err)
 
-	im, cleanUp := createTestImageManager(ctx, t)
-	defer cleanUp()
+	im := createTestImageManager(ctx, t)
 	server := NewServer(dao, nil, nil, im, nil)
 	body := bytes.NewReader([]byte("hello"))
 	w := httptest.NewRecorder()

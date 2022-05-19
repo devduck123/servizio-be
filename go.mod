@@ -7,7 +7,9 @@ require (
 	cloud.google.com/go/storage v1.22.0
 	firebase.google.com/go/v4 v4.7.1
 	github.com/google/uuid v1.1.2
+	github.com/segmentio/ksuid v1.0.4
 	github.com/tj/assert v0.0.3
+	google.golang.org/api v0.74.0
 	google.golang.org/grpc v1.45.0
 )
 
@@ -34,7 +36,6 @@ require (
 	golang.org/x/sys v0.0.0-20220328115105-d36c6a25d886 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/api v0.74.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220405205423-9d709892a2bf // indirect
 	google.golang.org/protobuf v1.28.0 // indirect

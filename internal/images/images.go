@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/google/uuid"
@@ -18,15 +17,20 @@ type Image struct {
 }
 
 type ImageManager struct {
-	API        *storage.Client
 	BucketName string
 }
 
 func (i ImageManager) UploadImage(ctx context.Context, id string, raw []byte) (Image, error) {
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return Image{}, err
+	}
+	defer client.Close()
+
 	objectPath := fmt.Sprintf("%s/%s", id, uuid.New().String())
 	bucketName := i.BucketName
 
-	// bucketIterator := i.API.Buckets(ctx, projectID)
+	// bucketIterator := client.Buckets(ctx, projectID)
 	// for {
 	// 	attrs, err := bucketIterator.Next()
 	// 	if err == iterator.Done {
@@ -40,14 +44,14 @@ func (i ImageManager) UploadImage(ctx context.Context, id string, raw []byte) (I
 
 	fmt.Println("bucketName:", bucketName)
 	fmt.Println("invoking Bucket")
-	bucket := i.API.Bucket(bucketName)
+	bucket := client.Bucket(bucketName)
 
 	fmt.Println("invoking bucket.Object")
 	object := bucket.Object(objectPath)
 	fmt.Println("invoking object.NewWriter")
 	w := object.NewWriter(ctx)
 	fmt.Println("invoking w.Write")
-	_, err := w.Write(raw)
+	_, err = w.Write(raw)
 
 	if err != nil {
 		return Image{}, err
@@ -63,9 +67,14 @@ func (i ImageManager) UploadImage(ctx context.Context, id string, raw []byte) (I
 }
 
 func (i ImageManager) GetImage(ctx context.Context, objectPath string) ([]byte, error) {
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
 	bucketName := i.BucketName
 	fmt.Println("objectPath:", objectPath)
-	bucket := i.API.Bucket(bucketName)
+	bucket := client.Bucket(bucketName)
 	object := bucket.Object(objectPath)
 
 	reader, err := object.NewReader(ctx)
@@ -86,7 +95,7 @@ func (i ImageManager) GetImage(ctx context.Context, objectPath string) ([]byte, 
 
 // TODO: review this code to check if useful...
 // func (i ImageManager) createBucket(ctx context.Context, bucketName string) (string, error) {
-// 	bucket := i.API.Bucket(bucketName)
+// 	bucket := client.Bucket(bucketName)
 // 	err := bucket.Create(ctx, projectID, nil)
 // 	if err != nil {
 // 		return "", err
@@ -95,7 +104,7 @@ func (i ImageManager) GetImage(ctx context.Context, objectPath string) ([]byte, 
 // }
 
 // func (i ImageManager) deleteBucket(ctx context.Context, bucketName string) (string, error) {
-// 	bucketToDelete := i.API.Bucket(bucketName)
+// 	bucketToDelete := client.Bucket(bucketName)
 // 	err := bucketToDelete.Delete(ctx)
 // 	if err != nil {
 // 		return "", err
@@ -103,21 +112,21 @@ func (i ImageManager) GetImage(ctx context.Context, objectPath string) ([]byte, 
 // 	return fmt.Sprintf("successfully deleted bucket %s", bucketName), nil
 // }
 
-func (i ImageManager) GetSignedURL(ctx context.Context) (Image, error) {
-	key := uuid.New().String()
+// func (i ImageManager) GetSignedURL(ctx context.Context) (Image, error) {
+// 	key := uuid.New().String()
 
-	url, err := i.API.Bucket(i.BucketName).SignedURL(key, &storage.SignedURLOptions{
-		Method:         "PUT",
-		Expires:        time.Now().Add(15 * time.Minute),
-		Scheme:         storage.SigningSchemeV4,
-		GoogleAccessID: "xxx@developer.gserviceaccount.com",
-	})
-	if err != nil {
-		return Image{}, err
-	}
+// 	url, err := client.Bucket(i.BucketName).SignedURL(key, &storage.SignedURLOptions{
+// 		Method:         "PUT",
+// 		Expires:        time.Now().Add(15 * time.Minute),
+// 		Scheme:         storage.SigningSchemeV4,
+// 		GoogleAccessID: "xxx@developer.gserviceaccount.com",
+// 	})
+// 	if err != nil {
+// 		return Image{}, err
+// 	}
 
-	return Image{
-		SignedURL: url,
-		Key:       key,
-	}, nil
-}
+// 	return Image{
+// 		SignedURL: url,
+// 		Key:       key,
+// 	}, nil
+// }

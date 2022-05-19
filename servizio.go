@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/firestore"
-	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go/v4"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 	"github.com/devduck123/servizio-be/internal/appointmentdao"
@@ -28,13 +27,8 @@ func setupServer() (http.Handler, error) {
 	businessDao := businessdao.NewDao(fsClient, "businesses")
 	clientDao := clientdao.NewDao(fsClient, "clients")
 	appointmentDao := appointmentdao.NewDao(fsClient, "appointments")
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer client.Close()
+
 	im := &images.ImageManager{
-		API:        client,
 		BucketName: "servizio-be.appspot.com",
 	}
 	app, err := firebase.NewApp(ctx, &firebase.Config{
