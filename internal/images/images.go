@@ -8,7 +8,6 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/google/uuid"
-	"google.golang.org/api/iterator"
 )
 
 var projectID = "servizio-be"
@@ -27,17 +26,17 @@ func (i ImageManager) UploadImage(ctx context.Context, id string, raw []byte) (I
 	objectPath := fmt.Sprintf("%s/%s", id, uuid.New().String())
 	bucketName := i.BucketName
 
-	bucketIterator := i.API.Buckets(ctx, projectID)
-	for {
-		attrs, err := bucketIterator.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return Image{}, err
-		}
-		fmt.Println("bucketName:", attrs.Name)
-	}
+	// bucketIterator := i.API.Buckets(ctx, projectID)
+	// for {
+	// 	attrs, err := bucketIterator.Next()
+	// 	if err == iterator.Done {
+	// 		break
+	// 	}
+	// 	if err != nil {
+	// 		return Image{}, err
+	// 	}
+	// 	fmt.Println("bucketName:", attrs.Name)
+	// }
 
 	fmt.Println("bucketName:", bucketName)
 	fmt.Println("invoking Bucket")

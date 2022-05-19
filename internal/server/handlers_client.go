@@ -145,7 +145,7 @@ func (s *Server) UploadImageClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imageURL := fmt.Sprintf("servizio-be.appspot.com/%v/%v", id, image.Key)
+	imageURL := fmt.Sprintf("servizio-be.appspot.com/%v", image.Key)
 	if err := s.clientDao.AppendImage(ctx, id, imageURL); err != nil {
 		writeErrorJSON(w, http.StatusInternalServerError, err)
 		return
