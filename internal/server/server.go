@@ -66,6 +66,7 @@ func (s *Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		// TODO: verify, or not?
 		emailVerified := token.Claims["email_verified"].(bool)
 		if !emailVerified {
 			writeErrorJSON(w, http.StatusUnauthorized, errors.New("email not verified"))
@@ -142,6 +143,8 @@ func (s *Server) BusinessRouter(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		s.Authenticate(s.DeleteBusiness)(w, r)
 		return
+	case http.MethodOptions:
+		return
 	default:
 		writeErrorJSON(w, http.StatusNotImplemented, fmt.Errorf("%v not implemented yet", r.Method))
 	}
@@ -168,6 +171,8 @@ func (s *Server) ClientRouter(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		s.Authenticate(s.DeleteClient)(w, r)
 		return
+	case http.MethodOptions:
+		return
 	default:
 		writeErrorJSON(w, http.StatusNotImplemented, fmt.Errorf("%v not implemented yet", r.Method))
 	}
@@ -189,6 +194,8 @@ func (s *Server) AppointmentRouter(w http.ResponseWriter, r *http.Request) {
 		return
 	case http.MethodDelete:
 		s.Authenticate(s.DeleteAppointment)(w, r)
+		return
+	case http.MethodOptions:
 		return
 	default:
 		writeErrorJSON(w, http.StatusNotImplemented, fmt.Errorf("%v not implemented yet", r.Method))

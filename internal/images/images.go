@@ -8,6 +8,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/google/uuid"
+	"google.golang.org/api/iterator"
 )
 
 var projectID = "servizio-be"
@@ -23,33 +24,50 @@ type ImageManager struct {
 }
 
 func (i ImageManager) UploadImage(ctx context.Context, id string, raw []byte) (Image, error) {
-	key := uuid.New().String()
+	objectPath := fmt.Sprintf("%s/%s", id, uuid.New().String())
+	bucketName := i.BucketName
 
-	bucketName := fmt.Sprintf("%v/%v", i.BucketName, id)
+	bucketIterator := i.API.Buckets(ctx, projectID)
+	for {
+		attrs, err := bucketIterator.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return Image{}, err
+		}
+		fmt.Println("bucketName:", attrs.Name)
+	}
+
+	fmt.Println("bucketName:", bucketName)
+	fmt.Println("invoking Bucket")
 	bucket := i.API.Bucket(bucketName)
-	// TODO: look into this panic!!!
-	// if err := bucket.Create(ctx, projectID, nil); err != nil {
-	// 	return Image{}, err
-	// }
-	object := bucket.Object(key)
+
+	fmt.Println("invoking bucket.Object")
+	object := bucket.Object(objectPath)
+	fmt.Println("invoking object.NewWriter")
 	w := object.NewWriter(ctx)
+	fmt.Println("invoking w.Write")
 	_, err := w.Write(raw)
+
 	if err != nil {
 		return Image{}, err
 	}
+	fmt.Println("invoking w.Close")
 	if err := w.Close(); err != nil {
 		return Image{}, fmt.Errorf("Writer.Close: %v", err)
 	}
 
 	return Image{
-		Key: key,
+		Key: objectPath,
 	}, nil
 }
 
-func (i ImageManager) GetImage(ctx context.Context, id string, key string) ([]byte, error) {
-	bucketName := fmt.Sprintf("%v/%v", i.BucketName, id)
+func (i ImageManager) GetImage(ctx context.Context, objectPath string) ([]byte, error) {
+	bucketName := i.BucketName
+	fmt.Println("objectPath:", objectPath)
 	bucket := i.API.Bucket(bucketName)
-	object := bucket.Object(key)
+	object := bucket.Object(objectPath)
 
 	reader, err := object.NewReader(ctx)
 	if err != nil {

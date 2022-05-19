@@ -45,7 +45,7 @@ func TestUploadImage(t *testing.T) {
 
 	fmt.Println("image key:", image.Key)
 
-	gotRaw, err := im.GetImage(ctx, "foo", image.Key)
+	gotRaw, err := im.GetImage(ctx, image.Key)
 	assert.NoError(t, err)
 	assert.Equal(t, raw, gotRaw)
 }
@@ -63,7 +63,7 @@ func TestGetImage_Exists(t *testing.T) {
 		BucketName: "servizio-be.appspot.com",
 	}
 
-	gotRaw, err := im.GetImage(ctx, "foo", "39afdab7-1ef8-4e4e-be9b-b8254cb45c69")
+	gotRaw, err := im.GetImage(ctx, "39afdab7-1ef8-4e4e-be9b-b8254cb45c69")
 	assert.NoError(t, err)
 
 	assert.Equal(t, []byte("hello"), gotRaw)
